@@ -1,0 +1,30 @@
+2025-11-30 00:50:28,604 [INFO] WebApp:194 - Connection lost
+2025-11-30 12:23:04,296 [INFO] WebApp:191 - Connection restablished
+2025-11-30 12:28:18,711 [INFO] WebApp:194 - Connection lost
+2025-11-30 12:28:20,058 [INFO] WebApp:191 - Connection restablished
+2025-11-30 16:49:38,733 [INFO] WebApp:194 - Connection lost
+2025-11-30 16:49:47,339 [INFO] WebApp:191 - Connection restablished
+2025-11-30 19:54:25,962 [INFO] WebApp:194 - Connection lost
+2025-11-30 19:54:29,902 [INFO] WebApp:191 - Connection restablished
+2025-11-30 21:17:54,889 [INFO] McuFinderGlobals:63 - Set McuFinder mode to 2 (CubeIDE integrated)
+2025-11-30 21:18:07,245 [INFO] MainUpdater:2872 - connection check result : 10
+2025-11-30 21:18:07,247 [INFO] MainUpdater:2872 - connection check result : 10
+2025-11-30 21:18:09,054 [INFO] MicroXplorer:468 - Change Database Path : 
+2025-11-30 21:18:09,058 [INFO] MicroXplorer:498 - Change Database Version : DB.6.0.150
+2025-11-30 21:18:09,074 [WARN] ThirdParty:871 - waiting for thirdparty lock release [close project]
+2025-11-30 21:18:09,074 [INFO] ThirdParty:873 - entering critical section [close project]
+2025-11-30 21:18:09,081 [INFO] ThirdParty:883 - exiting critical section [close project]
+2025-11-30 21:18:09,111 [INFO] PinOutPanel:1589 - setPackage(No Configuration,No Configuration)
+2025-11-30 21:18:09,142 [INFO] UtilMem:75 - Begin LoadConfig() Used Memory: 584604712 Bytes (1073741824)
+2025-11-30 21:20:05,297 [INFO] WebApp:194 - Connection lost
+2025-11-30 21:20:17,600 [INFO] WebApp:191 - Connection restablished
+2025-11-30 21:23:02,341 [INFO] WebApp:194 - Connection lost
+2025-11-30 21:23:04,043 [INFO] WebApp:191 - Connection restablished
+2025-11-30 21:23:53,990 [INFO] ServerAccessManage:452 - Complete download http(s) 200
+2025-11-30 21:23:54,010 [INFO] ServerAccessManage:509 - Download File stm32cube_db_v60130.zip
+2025-11-30 21:24:01,149 [INFO] FileExtend:248 - Unzip File : stm32cube_db_v60130.zip
+2025-11-30 21:24:01,154 [INFO] FileExtend:263 - Standard Zip Deflate
+2025-11-30 21:24:09,092 [INFO] LoadServerPackagesThread:196 - End of LoadServerPackages Thread
+2025-11-30 21:24:09,898 [INFO] CheckServerUpdateThread:120 - End of CheckServer Thread
+2025-11-30 21:44:55,984 [INFO] WebApp:194 - Connection lost
+2025-11-30 23:18:02,047 [INFO] WebApp:191 - Connection restablished
