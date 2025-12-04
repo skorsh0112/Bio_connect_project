@@ -1,0 +1,3 @@
+2025-12-02 12:55:29,041 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] This download action requires prior login. To proceed, please use the 'login' command with your my.st.com account email and password.
+2025-12-02 12:55:29,099 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] Run 'login <email> <password> <remember_me>' for example 'login john.smith@st.com mypassword y'.
+2025-12-02 12:55:29,104 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] If you do not have a my.st.com account, please visit https://st.com website to create one.

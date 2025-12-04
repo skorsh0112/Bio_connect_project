@@ -38,7 +38,16 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
+//volatile - make this variables changable during interrupts
+//variable to know which LED should work 0 - Ready (No LED), 1 - Red, 2 - IR
+volatile uint8_t measurement_state = 0;
 
+//variable which check that data is complite: 0 - not complite, 1 - complite
+volatile uint8_t data_ready = 0;
+
+//variable for remember data values
+volatile uint32_t val_red = 0;
+volatile uint32_t val_ir = 0;
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -50,6 +59,7 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -58,7 +68,10 @@ static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_DAC1_Init(void);
+
 /* USER CODE BEGIN PFP */
+
+void Measure_interrupt(void);
 
 /* USER CODE END PFP */
 
@@ -71,11 +84,12 @@ static void MX_DAC1_Init(void);
   * @brief  The application entry point.
   * @retval int
   */
+
+/* MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_*/
 int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-  uint32_t value_adc;
   uint32_t value_dac=0;
   char msg[100] = "Hello, World"; //note that 100 chars is the maximum length of the message
   /* USER CODE END 1 */
@@ -105,31 +119,34 @@ int main(void)
   HAL_DAC_Start(&hdac1,DAC_CHANNEL_2);
   HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
   HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), 0xFFFF); //print a hello world to begin the program
-  HAL_ADC_Start(&hadc1); //start the ADC in regular mode (no interrupt, no DMA). Needs to be polled.
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+  /* WHILE_WHILE_WHILE_WHILE_WHILE_WHILE_WHILE_WHILE_WHILE_WHILE_WHILE_WHILE_WHILE_WHILE_WHILE_*WHILE_WHILE_WHILE_*/
+
+
   while (1)
   {
-	  //---LED Control---
-	  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_0,1); //Turn on LED connected to A0 (high active, "1" turns the LED on)
-	  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_1,1); //Turn on LED connected to A1 (high active, "1" turns the LED on)
+
+	  measurement_state = 1;
+	  Measure_interrupt();
 
 	  //---ADC---
 	  //The ADC returns a 12bit value in unsigned integer format.
 	  //The input range of the ADC is 0V < Vin < Vref+. Vref+ is connected to VDD (3.3V)
 	  //Therefore, the ADC value 0x000 corresponds to 0V input voltage, and the ADC value 0xFFF corresponds to 3.3V input voltage.
-	  HAL_ADC_Start(&hadc1); //start the ADC in regular mode (no interrupt, no DMA). Needs to be polled.
-	  HAL_StatusTypeDef ADC_STATUS = HAL_ADC_PollForConversion(&hadc1, ADC_TIMEOUT); //wait for conversion to complete, max wait time is ADC_TIMEOUT
-	  if (ADC_STATUS == HAL_OK)
+
+	  //HAL_ADC_Start_IT(&hadc1); //instead of polling use interrupts HAL_ADC_Start(&hadc1); it don't waised time
+
+	  while (data_ready == 0)
 	  {
-		  value_adc = HAL_ADC_GetValue(&hadc1); //conversion successful, read out ADC value to variable "value_adc"
+
 	  }
-	  else
-	  {
-		  HAL_UART_Transmit(&huart2, (uint8_t*)"ADC broken", strlen("ADC broken"), UART_TIMEOUT);
-	  }
+
+	  data_ready = 0; //(НАДО ЧЕКНУТЬ ЧТО ЕСЛИ ТУТ ПРЕРЫВАНИЯ ВОЗНИКНУТ)
+
 
 	  //---DAC (for testing purpose only)---
 	  //The code below generates a sawtooth waveform and outputs in with the DAC on LD2 and Pin D13
@@ -143,11 +160,11 @@ int main(void)
 
       //---ADC raw value transmission over UART---
 	  //the values are formatted as long unsigned integer (%lu) and \r\n are used for carriage return (start at leftmost position) and new line.
-      sprintf(msg, "%lu\r\n",value_adc);
+      sprintf(msg, "%lu,%lu\r\n",val_red, val_ir);
       HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), UART_TIMEOUT);
 
       //---Wait for systick---
-      HAL_Delay(0); //wait for the next systick (1ms) - this limits the sampling rate to 1kHz. We use "0" because the function adds +1.
+      HAL_Delay(10); //wait for the next systick (1ms) - this limits the sampling rate to 1kHz. We use "0" because the function adds +1.
 
     /* USER CODE END WHILE */
 
@@ -155,6 +172,9 @@ int main(void)
   }
   /* USER CODE END 3 */
 }
+
+
+/*  PERIPHERALS_PERIPHERALS_PERIPHERALS_PERIPHERALS_PERIPHERALS_PERIPHERALS_PERIPHERALS_PERIPHERALS_PERIPHERALS_PERIPHERALS_*/
 
 /**
   * @brief System Clock Configuration
@@ -387,7 +407,48 @@ static void MX_GPIO_Init(void)
 /* USER CODE END MX_GPIO_Init_2 */
 }
 
+
+
 /* USER CODE BEGIN 4 */
+/* MY_PERIPHERALS!__MY_PERIPHERALS!__MY_PERIPHERALS!__MY_PERIPHERALS!__MY_PERIPHERALS!__MY_PERIPHERALS!__MY_PERIPHERALS!__*/
+
+void HAL_ADC_ConvCpltCallback (ADC_HandleTypeDef* hadc)
+{
+	if (measurement_state == 1)
+	{
+		val_red = HAL_ADC_GetValue(&hadc1);
+		measurement_state = 2;
+		Measure_interrupt();
+	}
+
+	else if (measurement_state == 2)
+	{
+		val_ir= HAL_ADC_GetValue(&hadc1);
+		data_ready = 1;
+		measurement_state = 0;
+		Measure_interrupt();
+
+	}
+}
+
+void Measure_interrupt(void)
+{
+if (measurement_state == 1)
+{
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, 1); //Turn ON RED
+	HAL_ADC_Start_IT(&hadc1);
+}
+else if (measurement_state == 2)
+{
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, 0); //Turn OFF RED
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, 1); //Turn ON IR
+	HAL_ADC_Start_IT(&hadc1);
+}
+else if (measurement_state == 0)
+{
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|GPIO_PIN_1, 0); //Turn OFF both LED
+}
+}
 
 /* USER CODE END 4 */
 
