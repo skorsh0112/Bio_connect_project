@@ -81,7 +81,7 @@ int main(int argc, const char * argv[]) {
     int serial_port = setup_serial_port(port_name);
 
     // Open the CSV file for appending
-    char export_file_name[] = "/data.csv"; // Export Filenames
+    char export_file_name[] = "../Export/data.csv"; // "/data.csv"; //"../Export/data.csv"; // Export Filenames
     FILE *csvFile = fopen(export_file_name, "w");
     if (csvFile == NULL) {
         perror("Unable to open data.csv");

@@ -1,6 +1,6 @@
-13:29:47 **** Incremental Build of configuration Debug for project bioConnect_STM32-MCU ****
+17:22:23 **** Incremental Build of configuration Debug for project bioConnect_STM32-MCU ****
 Info: Internal Builder is used for build
 Info: Parallel threads used: 0
 
-13:29:48 Build Finished. 0 errors, 0 warnings. (took 1s.177ms)
+17:22:26 Build Finished. 0 errors, 0 warnings. (took 2s.236ms)
 

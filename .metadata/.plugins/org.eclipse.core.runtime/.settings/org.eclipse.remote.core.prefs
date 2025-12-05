@@ -1,0 +1,11 @@
+connections/org.eclipse.remote.serial.core.connectionType/%D0%BD%D0%B5+%D1%81%D0%BE%D0%B2%D1%81%D0%B5%D0%BC+%D0%BF%D0%BE%D0%BD%D0%B8%D0%BC%D0%B0%D1%8E+%D1%87%D1%82%D0%BE+%D0%B4%D0%B5%D0%BB%D0%B0%D1%82%D1%8C+/serial.baudRate=11
+connections/org.eclipse.remote.serial.core.connectionType/%D0%BD%D0%B5+%D1%81%D0%BE%D0%B2%D1%81%D0%B5%D0%BC+%D0%BF%D0%BE%D0%BD%D0%B8%D0%BC%D0%B0%D1%8E+%D1%87%D1%82%D0%BE+%D0%B4%D0%B5%D0%BB%D0%B0%D1%82%D1%8C+/serial.byteSize=3
+connections/org.eclipse.remote.serial.core.connectionType/%D0%BD%D0%B5+%D1%81%D0%BE%D0%B2%D1%81%D0%B5%D0%BC+%D0%BF%D0%BE%D0%BD%D0%B8%D0%BC%D0%B0%D1%8E+%D1%87%D1%82%D0%BE+%D0%B4%D0%B5%D0%BB%D0%B0%D1%82%D1%8C+/serial.parity=0
+connections/org.eclipse.remote.serial.core.connectionType/%D0%BD%D0%B5+%D1%81%D0%BE%D0%B2%D1%81%D0%B5%D0%BC+%D0%BF%D0%BE%D0%BD%D0%B8%D0%BC%D0%B0%D1%8E+%D1%87%D1%82%D0%BE+%D0%B4%D0%B5%D0%BB%D0%B0%D1%82%D1%8C+/serial.portName=/dev/cu.debug-console
+connections/org.eclipse.remote.serial.core.connectionType/%D0%BD%D0%B5+%D1%81%D0%BE%D0%B2%D1%81%D0%B5%D0%BC+%D0%BF%D0%BE%D0%BD%D0%B8%D0%BC%D0%B0%D1%8E+%D1%87%D1%82%D0%BE+%D0%B4%D0%B5%D0%BB%D0%B0%D1%82%D1%8C+/serial.stopBits=0
+connections/org.eclipse.remote.serial.core.connectionType/try_1/serial.baudRate=11
+connections/org.eclipse.remote.serial.core.connectionType/try_1/serial.byteSize=3
+connections/org.eclipse.remote.serial.core.connectionType/try_1/serial.parity=0
+connections/org.eclipse.remote.serial.core.connectionType/try_1/serial.portName=/dev/cu.usbmodem1103
+connections/org.eclipse.remote.serial.core.connectionType/try_1/serial.stopBits=0
+eclipse.preferences.version=1

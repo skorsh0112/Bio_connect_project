@@ -1,10 +1,15 @@
-2025-12-04 07:36:33,228 [INFO] WebApp:194 - Connection lost
-2025-12-04 07:36:34,235 [INFO] WebApp:191 - Connection restablished
-2025-12-04 07:36:40,444 [INFO] WebApp:194 - Connection lost
-2025-12-04 07:36:44,645 [INFO] WebApp:191 - Connection restablished
-2025-12-04 08:01:27,764 [INFO] WebApp:194 - Connection lost
-2025-12-04 08:26:03,874 [INFO] WebApp:191 - Connection restablished
-2025-12-04 08:28:03,134 [INFO] WebApp:194 - Connection lost
-2025-12-04 08:28:14,244 [INFO] WebApp:191 - Connection restablished
-2025-12-04 10:25:43,360 [INFO] WebApp:194 - Connection lost
-2025-12-04 10:25:52,649 [INFO] WebApp:191 - Connection restablished
+2025-12-05 14:07:10,219 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] This download action requires prior login. To proceed, please use the 'login' command with your my.st.com account email and password.
+2025-12-05 14:07:10,250 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] Run 'login <email> <password> <remember_me>' for example 'login john.smith@st.com mypassword y'.
+2025-12-05 14:07:10,252 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] If you do not have a my.st.com account, please visit https://st.com website to create one.
+2025-12-05 14:09:53,573 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] This download action requires prior login. To proceed, please use the 'login' command with your my.st.com account email and password.
+2025-12-05 14:09:53,579 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] Run 'login <email> <password> <remember_me>' for example 'login john.smith@st.com mypassword y'.
+2025-12-05 14:09:53,581 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] If you do not have a my.st.com account, please visit https://st.com website to create one.
+2025-12-05 14:12:03,300 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] This download action requires prior login. To proceed, please use the 'login' command with your my.st.com account email and password.
+2025-12-05 14:12:03,316 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] Run 'login <email> <password> <remember_me>' for example 'login john.smith@st.com mypassword y'.
+2025-12-05 14:12:03,319 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] If you do not have a my.st.com account, please visit https://st.com website to create one.
+2025-12-05 14:12:15,773 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] This download action requires prior login. To proceed, please use the 'login' command with your my.st.com account email and password.
+2025-12-05 14:12:15,777 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] Run 'login <email> <password> <remember_me>' for example 'login john.smith@st.com mypassword y'.
+2025-12-05 14:12:15,779 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] If you do not have a my.st.com account, please visit https://st.com website to create one.
+2025-12-05 19:18:17,842 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] This download action requires prior login. To proceed, please use the 'login' command with your my.st.com account email and password.
+2025-12-05 19:18:17,853 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] Run 'login <email> <password> <remember_me>' for example 'login john.smith@st.com mypassword y'.
+2025-12-05 19:18:17,856 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] If you do not have a my.st.com account, please visit https://st.com website to create one.

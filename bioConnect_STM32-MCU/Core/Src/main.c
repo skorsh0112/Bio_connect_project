@@ -119,6 +119,14 @@ int main(void)
   HAL_DAC_Start(&hdac1,DAC_CHANNEL_2);
   HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
   HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), 0xFFFF); //print a hello world to begin the program
+
+  HAL_TIM_Base_Start_IT(&htim3); //transfer timer from Delay to interruption
+
+    // Create a correct ADC interruption implementation
+    __HAL_ADC_CLEAR_FLAG(&hadc1, (ADC_FLAG_EOC | ADC_FLAG_EOS | ADC_FLAG_OVR));
+
+    HAL_NVIC_SetPriority(ADC1_2_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(ADC1_2_IRQn);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -129,10 +137,6 @@ int main(void)
 
   while (1)
   {
-
-	  measurement_state = 1;
-	  Measure_interrupt();
-
 	  //---ADC---
 	  //The ADC returns a 12bit value in unsigned integer format.
 	  //The input range of the ADC is 0V < Vin < Vref+. Vref+ is connected to VDD (3.3V)
@@ -140,12 +144,15 @@ int main(void)
 
 	  //HAL_ADC_Start_IT(&hadc1); //instead of polling use interrupts HAL_ADC_Start(&hadc1); it don't waised time
 
-	  while (data_ready == 0)
+	  if (data_ready == 1)
 	  {
+		  data_ready = 0; //(НАДО ЧЕКНУТЬ ЧТО ЕСЛИ ТУТ ПРЕРЫВАНИЯ ВОЗНИКНУТ)
+		  //---ADC raw value transmission over UART---
+		  	  //the values are formatted as long unsigned integer (%lu) and \r\n are used for carriage return (start at leftmost position) and new line.
+		  sprintf(msg, "%lu,%lu\r\n",val_red, val_ir);
+		  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), UART_TIMEOUT);
 
 	  }
-
-	  data_ready = 0; //(НАДО ЧЕКНУТЬ ЧТО ЕСЛИ ТУТ ПРЕРЫВАНИЯ ВОЗНИКНУТ)
 
 
 	  //---DAC (for testing purpose only)---
@@ -158,13 +165,9 @@ int main(void)
 	    value_dac=0;
       }
 
-      //---ADC raw value transmission over UART---
-	  //the values are formatted as long unsigned integer (%lu) and \r\n are used for carriage return (start at leftmost position) and new line.
-      sprintf(msg, "%lu,%lu\r\n",val_red, val_ir);
-      HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), UART_TIMEOUT);
 
       //---Wait for systick---
-      HAL_Delay(10); //wait for the next systick (1ms) - this limits the sampling rate to 1kHz. We use "0" because the function adds +1.
+      //HAL_Delay(10); //wait for the next systick (1ms) - this limits the sampling rate to 1kHz. We use "0" because the function adds +1.
 
     /* USER CODE END WHILE */
 
@@ -448,6 +451,18 @@ else if (measurement_state == 0)
 {
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|GPIO_PIN_1, 0); //Turn OFF both LED
 }
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+	if (htim->Instance == TIM3)
+	{
+		if (measurement_state == 0)
+		{
+			measurement_state = 1;
+			Measure_interrupt();
+		}
+	}
 }
 
 /* USER CODE END 4 */

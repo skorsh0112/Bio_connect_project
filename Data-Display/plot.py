@@ -12,7 +12,7 @@ from matplotlib.animation import FuncAnimation
 import collections
 
 
-FILE_NAME = '/Users/skorsh/STM32CubeIDE/Project_bioConnect/bioConnect_UNIX-Serial-2-CSV/src/data.csv' # in original file it was ../Export/data.csv 
+FILE_NAME = '../Export/data.csv' #'/Users/skorsh/STM32CubeIDE/Project_bioConnect/bioConnect_UNIX-Serial-2-CSV/src/data.csv' # in original file it was ../Export/data.csv 
 BUFFER_SIZE = 2**12  # Length of the buffer
 UPDATE_AFTER_MS = 10  # Updates plot after x miliseconds
 
@@ -22,7 +22,7 @@ y_data = collections.deque(maxlen=BUFFER_SIZE)
 # Initialize the plot
 fig, ax = plt.subplots()
 line, = ax.plot([], [], c='k')  # Line to be updated
-ax.set_ylim(-8500, -7500)  # Adjust y-axis !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! in original -2300 to 4200
+ax.set_ylim(-12200, -11900)  # Adjust y-axis !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! in original -2300 to 4200
 a, b = 0, BUFFER_SIZE  # Set x-axis limits
 
 # Opening the CSV file
