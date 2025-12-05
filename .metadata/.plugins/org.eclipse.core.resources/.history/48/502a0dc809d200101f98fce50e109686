@@ -159,14 +159,11 @@ int main(void)
 	  //The code below generates a sawtooth waveform and outputs in with the DAC on LD2 and Pin D13
 	  //If you want to read back the waveform with the ADC, connect Pin D13 (DAC OUT) to A5 (ADC IN) together on your Nucleo Board.
 	  //The two values should then be similar.
-
-
-//	  HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, value_dac);
-//	  value_dac++;
-//	  if(value_dac>4095) {
-//	    value_dac=0;
-//      }
-
+	  HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, value_dac);
+	  value_dac++;
+	  if(value_dac>4095) {
+	    value_dac=0;
+      }
 
 
       //---Wait for systick---
