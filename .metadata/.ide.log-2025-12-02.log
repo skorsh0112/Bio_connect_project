@@ -341,3 +341,7 @@ java.lang.NullPointerException: Cannot invoke "javax.swing.JTextField.getText()"
 2025-12-05 19:14:18,112 [INFO] NvicIntPanel:101 - NVIC parent = com.st.microxplorer.plugins.ip.nvic.MultiNvicIntPanel[,0,0,0x0,invalid,layout=javax.swing.BoxLayout,alignmentX=0.0,alignmentY=0.0,border=,flags=9,maximumSize=,minimumSize=,preferredSize=]
 2025-12-05 19:15:37,343 [INFO] NvicIntPanel:101 - NVIC parent = com.st.microxplorer.plugins.ip.nvic.MultiNvicIntPanel[,0,0,0x0,invalid,layout=javax.swing.BoxLayout,alignmentX=0.0,alignmentY=0.0,border=,flags=9,maximumSize=,minimumSize=,preferredSize=]
 2025-12-05 19:18:11,157 [INFO] UtilMem:75 - End SaveConfig() Used Memory: 976105472 Bytes (1073741824)
+2025-12-05 19:50:19,606 [INFO] WebApp:194 - Connection lost
+2025-12-05 20:04:46,958 [INFO] WebApp:191 - Connection restablished
+2025-12-05 22:47:40,058 [INFO] WebApp:194 - Connection lost
+2025-12-05 22:50:48,263 [INFO] WebApp:191 - Connection restablished

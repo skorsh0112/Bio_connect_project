@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include "string.h"
 #include <stdio.h>
+//#include "stm3214xx_ll_tim.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -55,6 +56,8 @@ ADC_HandleTypeDef hadc1;
 
 DAC_HandleTypeDef hdac1;
 
+TIM_HandleTypeDef htim6;
+
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
@@ -68,7 +71,7 @@ static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_DAC1_Init(void);
-
+static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
 
 void Measure_interrupt(void);
@@ -84,8 +87,6 @@ void Measure_interrupt(void);
   * @brief  The application entry point.
   * @retval int
   */
-
-/* MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_MAIN_*/
 int main(void)
 {
 
@@ -115,18 +116,22 @@ int main(void)
   MX_USART2_UART_Init();
   MX_ADC1_Init();
   MX_DAC1_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
   HAL_DAC_Start(&hdac1,DAC_CHANNEL_2);
   HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
   HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), 0xFFFF); //print a hello world to begin the program
 
-  HAL_TIM_Base_Start_IT(&htim3); //transfer timer from Delay to interruption
+  //HAL_TIM_Base_Start_IT(&htim3); //transfer timer from Delay to interruption
 
     // Create a correct ADC interruption implementation
     __HAL_ADC_CLEAR_FLAG(&hadc1, (ADC_FLAG_EOC | ADC_FLAG_EOS | ADC_FLAG_OVR));
 
     HAL_NVIC_SetPriority(ADC1_2_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(ADC1_2_IRQn);
+
+    uint32_t last_update = 0;
+//    HAL_TIM_Base_Start_IT(&htim6); // Enable TIM6 as in Ex5.2
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -154,7 +159,12 @@ int main(void)
 
 	  }
 
-
+	  if (HAL_GetTick() - last_update >= 10)
+	  {
+		  last_update = HAL_GetTick();
+		  measurement_state = 1;
+		  Measure_interrupt();
+	  }
 	  //---DAC (for testing purpose only)---
 	  //The code below generates a sawtooth waveform and outputs in with the DAC on LD2 and Pin D13
 	  //If you want to read back the waveform with the ADC, connect Pin D13 (DAC OUT) to A5 (ADC IN) together on your Nucleo Board.
@@ -175,12 +185,17 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+//		int updateevent = LL_TIM_IsActiveFlag_UPDATE(TIM6);
+//		if(updateevent)
+//		{
+//		LL_TIM_ClearFlag_UPDATE(TIM6);
+//		measurement_state = 1;
+//		Measure_interrupt();
+//		}
+
   }
   /* USER CODE END 3 */
 }
-
-
-/*  PERIPHERALS_PERIPHERALS_PERIPHERALS_PERIPHERALS_PERIPHERALS_PERIPHERALS_PERIPHERALS_PERIPHERALS_PERIPHERALS_PERIPHERALS_*/
 
 /**
   * @brief System Clock Configuration
@@ -342,6 +357,44 @@ static void MX_DAC1_Init(void)
 }
 
 /**
+  * @brief TIM6 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM6_Init(void)
+{
+
+  /* USER CODE BEGIN TIM6_Init 0 */
+
+  /* USER CODE END TIM6_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM6_Init 1 */
+
+  /* USER CODE END TIM6_Init 1 */
+  htim6.Instance = TIM6;
+  htim6.Init.Prescaler = 7999;
+  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim6.Init.Period = 99;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM6_Init 2 */
+
+  /* USER CODE END TIM6_Init 2 */
+
+}
+
+/**
   * @brief USART2 Initialization Function
   * @param None
   * @retval None
@@ -384,8 +437,8 @@ static void MX_USART2_UART_Init(void)
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-/* USER CODE BEGIN MX_GPIO_Init_1 */
-/* USER CODE END MX_GPIO_Init_1 */
+  /* USER CODE BEGIN MX_GPIO_Init_1 */
+  /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
@@ -409,11 +462,9 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-/* USER CODE BEGIN MX_GPIO_Init_2 */
-/* USER CODE END MX_GPIO_Init_2 */
+  /* USER CODE BEGIN MX_GPIO_Init_2 */
+  /* USER CODE END MX_GPIO_Init_2 */
 }
-
-
 
 /* USER CODE BEGIN 4 */
 /* MY_PERIPHERALS!__MY_PERIPHERALS!__MY_PERIPHERALS!__MY_PERIPHERALS!__MY_PERIPHERALS!__MY_PERIPHERALS!__MY_PERIPHERALS!__*/
@@ -456,17 +507,17 @@ else if (measurement_state == 0)
 }
 }
 
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-	if (htim->Instance == TIM3)
-	{
-		if (measurement_state == 0)
-		{
-			measurement_state = 1;
-			Measure_interrupt();
-		}
-	}
-}
+//void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+//{
+//	if (htim->Instance == TIM3)
+//	{
+//		if (measurement_state == 0)
+//		{
+//			measurement_state = 1;
+//			Measure_interrupt();
+//		}
+//	}
+//}
 
 /* USER CODE END 4 */
 
@@ -484,8 +535,7 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.

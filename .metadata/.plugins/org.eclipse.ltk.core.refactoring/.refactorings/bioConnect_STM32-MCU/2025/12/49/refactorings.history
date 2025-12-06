@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">&#x0A;<refactoring comment="Rename resource &apos;bioConnect_STM32-MCU/Core/Src/main.c&apos; to &apos;new_main.c&apos;" description="Rename resource &apos;main.c&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="Core/Src/main.c" name="new_main.c" stamp="1765041950656" updateReferences="true"/>&#x0A;<refactoring comment="Rename resource &apos;bioConnect_STM32-MCU/Core/Src/new_main.c&apos; to &apos;main.c&apos;" description="Rename resource &apos;new_main.c&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="Core/Src/new_main.c" name="main.c" stamp="1765042419326" updateReferences="true"/>
+</session>

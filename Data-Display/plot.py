@@ -22,7 +22,7 @@ y_data = collections.deque(maxlen=BUFFER_SIZE)
 # Initialize the plot
 fig, ax = plt.subplots()
 line, = ax.plot([], [], c='k')  # Line to be updated
-ax.set_ylim(-12200, -11900)  # Adjust y-axis !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! in original -2300 to 4200
+ax.set_ylim(-100000, 100000)  # Adjust y-axis !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! in original -2300 to 4200
 a, b = 0, BUFFER_SIZE  # Set x-axis limits
 
 # Opening the CSV file
