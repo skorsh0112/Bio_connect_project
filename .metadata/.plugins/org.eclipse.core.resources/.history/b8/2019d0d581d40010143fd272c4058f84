@@ -49,7 +49,6 @@ volatile uint8_t data_ready = 0;
 //variable for remember data values
 volatile uint32_t val_red = 0;
 volatile uint32_t val_ir = 0;
-volatile uint32_t val_dark = 0;
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -160,10 +159,10 @@ int main(void)
 
 	  }
 
-	  if (HAL_GetTick() - last_update >= 10 && measurement_state == 0)
+	  if (HAL_GetTick() - last_update >= 10)
 	  {
 		  last_update = HAL_GetTick();
-		  measurement_state = 3;
+		  measurement_state = 1;
 		  Measure_interrupt();
 	  }
 	  //---DAC (for testing purpose only)---
@@ -472,23 +471,16 @@ static void MX_GPIO_Init(void)
 
 void HAL_ADC_ConvCpltCallback (ADC_HandleTypeDef* hadc)
 {
-	uint32_t raw_val = HAL_ADC_GetValue(&hadc1);
-	if (measurement_state == 3)
+	if (measurement_state == 1)
 	{
-		val_dark = raw_val;
-		measurement_state = 1;
-		Measure_interrupt();
-	}
-	else if (measurement_state == 1)
-	{
-		val_red = (raw_val > val_dark) ? (raw_val - val_dark) : 0;
+		val_red = HAL_ADC_GetValue(&hadc1);
 		measurement_state = 2;
 		Measure_interrupt();
 	}
 
 	else if (measurement_state == 2)
 	{
-		val_ir = (raw_val > val_dark) ? (raw_val - val_dark) : 0;
+		val_ir= HAL_ADC_GetValue(&hadc1);
 		data_ready = 1;
 		measurement_state = 0;
 		Measure_interrupt();
@@ -498,26 +490,22 @@ void HAL_ADC_ConvCpltCallback (ADC_HandleTypeDef* hadc)
 
 void Measure_interrupt(void)
 {
-	if (measurement_state == 3)
-	{
-		HAL_ADC_Start_IT(&hadc1);
-	}
-	else if (measurement_state == 1)
-	{
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, 1); //Turn ON RED
-		HAL_ADC_Start_IT(&hadc1);
-	}
-	else if (measurement_state == 2)
-	{
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, 0); //Turn OFF RED
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, 1); //Turn ON IR
-		HAL_ADC_Start_IT(&hadc1);
-	}
-	else if (measurement_state == 0)
-	{
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|GPIO_PIN_1, 0); //Turn OFF both LED
-	}
-	}
+if (measurement_state == 1)
+{
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, 1); //Turn ON RED
+	HAL_ADC_Start_IT(&hadc1);
+}
+else if (measurement_state == 2)
+{
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, 0); //Turn OFF RED
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, 1); //Turn ON IR
+	HAL_ADC_Start_IT(&hadc1);
+}
+else if (measurement_state == 0)
+{
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|GPIO_PIN_1, 0); //Turn OFF both LED
+}
+}
 
 //void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 //{

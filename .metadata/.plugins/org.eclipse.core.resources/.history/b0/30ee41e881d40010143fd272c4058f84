@@ -49,7 +49,7 @@ volatile uint8_t data_ready = 0;
 //variable for remember data values
 volatile uint32_t val_red = 0;
 volatile uint32_t val_ir = 0;
-volatile uint32_t val_dark = 0;
+volatile uint32_t var_dark = 0;
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
