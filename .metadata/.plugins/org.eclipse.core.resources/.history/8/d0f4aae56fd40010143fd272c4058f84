@@ -77,7 +77,7 @@ int setup_serial_port(const char* port_name){
 
 int main(int argc, const char * argv[]) {
 
-    char port_name[] = "/dev/tty.usbmodem1103";  // Change this to your serial port !!!
+    char port_name[] = "/dev/tty.usbmodem103";  // Change this to your serial port !!!
     int serial_port = setup_serial_port(port_name);
 
     // Open the CSV file for appending
@@ -105,8 +105,7 @@ int main(int argc, const char * argv[]) {
     char buffer[BUFFER_SIZE];  // Buffer to store the received value
     int buffer_index = 0;      // Index to track position in buffer
     char chunk[CHUNK_SIZE];    // Temporary buffer to read multiple bytes
-    int red_val;               // Integer value of RED value (first value)
-    int ir_val;				   // Integer value of IR value (second value)
+    int raw_val;               // Integer value of the full buffer
     float proc_val;            // Float value to write out
     ssize_t n_bytes;           // Number of bytes read
 
@@ -124,24 +123,7 @@ int main(int argc, const char * argv[]) {
 
                     // End of a value (newline detected)
                     buffer[buffer_index] = '\0';  // Null-terminate the string
-
-                    if (sscanf(buffer, "%d,%d", &red_val, &ir_val) == 2)
-						{
-							// Both values have been found!
-
-							printf("RED: %d, IR: %d\n", red_val, ir_val); // print both values
-
-							// Save in CSV (FOR NOW ONLY IR, THEN SCHOUL BOTH)
-							fprintf(csvFile, "%d\n", ir_val);
-							fflush(csvFile);
-						}
-						else
-						{
-							// If there wasn't two correct values
-							printf("Parsing error: %s\n", buffer);
-						}
-
-                    //raw_val = atof(buffer);       // Convert string to float
+                    raw_val = atof(buffer);       // Convert string to float
 
                     //  ----------------------- START Processing -------------------------
                     /*
@@ -152,17 +134,17 @@ int main(int argc, const char * argv[]) {
 					*/
 
                     // Dummy code removing signal offset and scaling the signal by an arbitrary scale factor.
-//                    printf("Raw value: %d\n", raw_val);  // Print the value
-//                    proc_val = raw_val - offset;
-//                    proc_val *= scaling_factor;
-//					// Dumm code END
-//
-//                    printf("Processed value: %f\n", proc_val);  // Print the value
-//                    //  ----------------------- END Processing -------------------------
-//
-//                    // saves the processed value to the end of the csv file.
-//                    fprintf(csvFile, "%f\n", proc_val);
-//                    fflush(csvFile);
+                    printf("Raw value: %d\n", raw_val);  // Print the value
+                    proc_val = raw_val - offset;
+                    proc_val *= scaling_factor;
+					// Dumm code END
+
+                    printf("Processed value: %f\n", proc_val);  // Print the value
+                    //  ----------------------- END Processing -------------------------
+
+                    // saves the processed value to the end of the csv file.
+                    fprintf(csvFile, "%f\n", proc_val);
+                    fflush(csvFile);
 
                     buffer_index = 0;  // Reset buffer for the next value
 

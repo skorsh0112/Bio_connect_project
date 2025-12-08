@@ -77,7 +77,7 @@ int setup_serial_port(const char* port_name){
 
 int main(int argc, const char * argv[]) {
 
-    char port_name[] = "/dev/tty.usbmodem1103";  // Change this to your serial port !!!
+    char port_name[] = "/dev/tty.usbmodem103";  // Change this to your serial port !!!
     int serial_port = setup_serial_port(port_name);
 
     // Open the CSV file for appending
@@ -105,7 +105,7 @@ int main(int argc, const char * argv[]) {
     char buffer[BUFFER_SIZE];  // Buffer to store the received value
     int buffer_index = 0;      // Index to track position in buffer
     char chunk[CHUNK_SIZE];    // Temporary buffer to read multiple bytes
-    int red_val;               // Integer value of RED value (first value)
+    int raw_val;               // Integer value of RED value (first value)
     int ir_val;				   // Integer value of IR value (second value)
     float proc_val;            // Float value to write out
     ssize_t n_bytes;           // Number of bytes read

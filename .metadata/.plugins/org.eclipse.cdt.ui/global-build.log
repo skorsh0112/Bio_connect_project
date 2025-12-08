@@ -1,8 +1,18 @@
-21:18:12 **** Incremental Build of configuration Debug for project bioConnect_UNIX-Serial-2-CSV ****
+21:04:25 **** Incremental Build of configuration Debug for project bioConnect_UNIX-Serial-2-CSV ****
 make all 
 Building file: ../src/UNIX-Serial-2-CSV.c
 Invoking: GCC C Compiler
 gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/UNIX-Serial-2-CSV.d" -MT"src/UNIX-Serial-2-CSV.o" -o "src/UNIX-Serial-2-CSV.o" "../src/UNIX-Serial-2-CSV.c"
+../src/UNIX-Serial-2-CSV.c:96:11: warning: unused variable 'scaling_factor' [-Wunused-variable]
+   96 |     float scaling_factor = 10;
+      |           ^~~~~~~~~~~~~~
+../src/UNIX-Serial-2-CSV.c:97:11: warning: unused variable 'offset' [-Wunused-variable]
+   97 |     float offset = 1500;
+      |           ^~~~~~
+../src/UNIX-Serial-2-CSV.c:110:11: warning: unused variable 'proc_val' [-Wunused-variable]
+  110 |     float proc_val;            // Float value to write out
+      |           ^~~~~~~~
+3 warnings generated.
 Finished building: ../src/UNIX-Serial-2-CSV.c
  
 Building target: bioConnect_UNIX-Serial-2-CSV
@@ -10,6 +20,6 @@ Invoking: GCC C Linker
 gcc  -o "bioConnect_UNIX-Serial-2-CSV"  ./src/UNIX-Serial-2-CSV.o   
 Finished building target: bioConnect_UNIX-Serial-2-CSV
  
-21:18:25 **** Incremental Build of configuration Debug for project bioConnect_UNIX-Serial-2-CSV ****
+21:04:40 **** Incremental Build of configuration Debug for project bioConnect_UNIX-Serial-2-CSV ****
 make all 
 make: Nothing to be done for `all'.
