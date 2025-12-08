@@ -65,7 +65,7 @@ HANDLE setup_serial_port(const char* port_name) {
 
 int main(int argc, const char* argv[]) {
 
-    char port_name[] = "COM1";  // Change this to the correct serial port on your PC (e.g., COM1, COM3, etc.)
+    char port_name[] = "COM5";  // Change this to the correct serial port on your PC (e.g., COM1, COM3, etc.)
     HANDLE serial_port = setup_serial_port(port_name);
 
     if (serial_port == INVALID_HANDLE_VALUE) {
@@ -81,21 +81,37 @@ int main(int argc, const char* argv[]) {
         return 1;
     }
 
-    //  ----------------------- START DSP Initialization -----------------------
-    //  In this section you can initialize varialbes for your algorithm/filter.
+    // ----------------------- START DSP Initialization -----------------------
+    // Sampling: main.c triggers a measurement about every 10 ms -> ~100 Red/IR pairs per second.
+    const float FS = 100.0f;          // effective sample rate in Hz (pairs per second)
 
-    float scaling_factor = 50;
-    float offset = 400;
+    // IR / RED raw values
+    float red_raw = 0.0f;
+    float ir_raw  = 0.0f;
 
-    //  ----------------------- END DSP Initialization -------------------------
+    // Filtered IR signal for HR detection (simple low-pass / smoothing)
+    float ir_filt = 0.0f;
+    const float alpha_filt = 0.2f;    // 0<alpha<1; higher = less smoothing
+
+    // Heart-rate estimation
+    float hr_bpm      = 0.0f;
+    float hr_bpm_filt = 0.0f;
+    int   sample_idx  = 0;            // counts IR samples (pairs)
+    int   last_peak   = -1000;
+    int   prev_peak   = -1000;
+    const float peak_thr     = 10.0f; // threshold on filtered IR (adjust as needed)
+    const float min_hr_bpm   = 40.0f;
+    const float max_hr_bpm   = 200.0f;
+    const float refractory_s = 0.3f;  // 300 ms refractory -> ~33 samples
+    const int   refractory_n = (int)(refractory_s * FS);
+    float prev_ir_filt = 0.0f;
+    // ----------------------- END DSP Initialization -------------------------
 
     // Continuously read from the serial port
-
-    char buffer[BUFFER_SIZE];  // Buffer to store the received value
+    char buffer[BUFFER_SIZE];  // Buffer to store the received line "red,ir"
     int buffer_index = 0;      // Index to track position in buffer
     char chunk[CHUNK_SIZE];    // Temporary buffer to read multiple bytes
-    int raw_val;               // Integer value of the full buffer
-    float proc_val;            // Float value to write out
+    float proc_val = 0.0f;     // Value to write to CSV (here: filtered IR)
     DWORD n_bytes;             // Number of bytes read
 
     printf("Press CTRL+C to terminate...\n");
@@ -110,38 +126,64 @@ int main(int argc, const char* argv[]) {
             for (DWORD i = 0; i < n_bytes; ++i) {
                 if (chunk[i] == '\n') {
 
-                    // End of a value (newline detected)
+                    // End of a line (newline detected): buffer contains "red,ir\r" or "red,ir"
                     buffer[buffer_index] = '\0';  // Null-terminate the string
-                    raw_val = atof(buffer);       // Convert string to float
-                    printf("Raw value: %d\n", raw_val);  // Print the value
-                    //  ----------------------- START Processing -------------------------
-                    /*
-                       Here you can implement your own algorithms or digital filter on the sensor data.
-		   		       The new measurement is provided in the variable raw_val (float). The processed value
-				       must be stored to the variable proc_val (float), which then will be appended to the
-				       CSV file.
-				    */
 
-                    // Dummy code removing signal offset and scaling the signal by an arbitrary scale factor.
-                    proc_val = raw_val - offset;
-                    proc_val = proc_val * scaling_factor;
-			   	    // Dumm code END
+                    // Parse two values: red and ir
+                    int red_int = 0;
+                    int ir_int  = 0;
+                    sscanf(buffer, "%d,%d", &red_int, &ir_int);
+                    red_raw = (float)red_int;
+                    ir_raw  = (float)ir_int;
 
-                    printf("Processed value: %f\n", proc_val);  // Print the value
-                    //  ----------------------- END Processing -------------------------
+                    printf("%d, %d\n", red_int, ir_int);
 
-                    // saves the processed value to the end of the csv file.
+                    // ----------------------- START Processing -------------------------
+
+                    // 1) Simple filtering of IR to get a smoother PPG for peak detection
+                    ir_filt = ir_filt + alpha_filt * (ir_raw - ir_filt);
+
+                    // 2) Heart-rate peak detection on filtered IR:
+                    //    detect upward crossing of threshold with refractory time
+                    if (prev_ir_filt < peak_thr && ir_filt >= peak_thr) {
+                        if ((sample_idx - last_peak) > refractory_n) {
+
+                            prev_peak = last_peak;
+                            last_peak = sample_idx;
+
+                            if (prev_peak >= 0) {
+                                int   delta_n    = last_peak - prev_peak;
+                                float period_sec = delta_n / FS;
+                                float inst_hr    = 60.0f / period_sec;
+
+                                // Accept only plausible HR values
+                                if (inst_hr > min_hr_bpm && inst_hr < max_hr_bpm) {
+                                    const float alpha_hr = 0.3f;
+                                    hr_bpm      = inst_hr;
+                                    hr_bpm_filt = hr_bpm_filt + alpha_hr * (hr_bpm - hr_bpm_filt);
+                                    printf("HR ≈ %.1f bpm\n", hr_bpm_filt);
+                                }
+                            }
+                        }
+                    }
+                    prev_ir_filt = ir_filt;
+
+                    // 3) Choose what to send to CSV: here the filtered IR waveform
+                    proc_val = ir_filt;
+
+                    // ----------------------- END Processing -------------------------
+
+                    // Save the processed value to the end of the CSV file.
                     fprintf(csvFile, "%f\n", proc_val);
                     fflush(csvFile);
 
-                    buffer_index = 0;  // Reset buffer for the next value
+                    buffer_index = 0;  // Reset buffer for the next line
+                    sample_idx++;      // one more Red/IR pair processed
 
                 } else {
                     // Accumulate characters until newline is detected
                     if (buffer_index < BUFFER_SIZE - 1) {
                         buffer[buffer_index++] = chunk[i];
-
-                        // Handle buffer overflow
                     } else {
                         fprintf(stderr, "Buffer overflow, discarding data\n");
                         buffer_index = 0;  // Reset buffer in case of overflow
@@ -149,7 +191,7 @@ int main(int argc, const char* argv[]) {
                 }
             }
         } else {
-            if (n_bytes < 0) {
+            if ((int)n_bytes < 0) {
                 printf("Error reading from the serial port\n");
                 break;
             }
@@ -163,3 +205,4 @@ int main(int argc, const char* argv[]) {
     }
     return 0;
 }
+
