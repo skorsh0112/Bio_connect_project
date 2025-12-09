@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include "string.h"
 #include <stdio.h>
+#include <stdbool.h>
 //#include "stm3214xx_ll_tim.h"
 /* USER CODE END Includes */
 
@@ -44,12 +45,27 @@
 volatile uint8_t measurement_state = 0;
 
 //variable which check that data is complite: 0 - not complite, 1 - complite
-volatile uint8_t data_ready = 0;
+static volatile uint8_t data_ready = 0;
 
 //variable for remember data values
-volatile uint32_t val_red = 0;
-volatile uint32_t val_ir = 0;
-volatile uint32_t val_dark = 0;
+//volatile uint32_t val_red = 0;
+//volatile uint32_t val_ir = 0;
+static volatile uint32_t val_dark = 0;
+
+// Transfer to buffer to collect measured data
+//const int16_t N = 64; // number of elements in buffer
+#define N 64
+// Red BUFFER:
+static volatile uint32_t buffer_Red[N]; // buffer memory
+static volatile int16_t tail_Red = 0; // index pointing to next empty storage space in buffer
+static volatile int16_t head_Red = 0; // index pointing to oldest element added
+
+// IR BUFFER:
+static volatile uint32_t buffer_IR[N]; // buffer memory
+static volatile int16_t tail_IR = 0; // index pointing to next empty storage space in buffer
+static volatile int16_t head_IR = 0; // index pointing to oldest element added
+
+
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -81,7 +97,49 @@ void Measure_interrupt(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void Enqueue_Red(uint32_t val)
+{
+	buffer_Red[tail_Red] = val;
+	tail_Red = (tail_Red + 1) % N;
+}
 
+void Enqueue_IR(uint32_t val)
+{
+	buffer_IR[tail_IR] = val;
+	tail_IR = (tail_IR + 1) % N;
+}
+
+uint32_t Dequeue_Red(void)
+{
+	uint32_t val = 0;
+	if (head_Red != tail_Red)
+	{
+		val = buffer_Red[head_Red];
+		head_Red = (head_Red + 1) % N;
+	}
+	return val;
+}
+
+uint32_t Dequeue_IR(void)
+{
+	uint32_t val = 0;
+	if (head_IR != tail_IR)
+	{
+		val = buffer_IR[head_IR];
+		head_IR = (head_IR + 1) % N;
+	}
+	return val;
+}
+
+bool isEmpty_Red(void)
+{
+return (tail_Red == head_Red);
+}
+
+bool isEmpty_IR(void)
+{
+return (tail_IR == head_IR);
+}
 /* USER CODE END 0 */
 
 /**
@@ -150,11 +208,20 @@ int main(void)
 
 	  //HAL_ADC_Start_IT(&hadc1); //instead of polling use interrupts HAL_ADC_Start(&hadc1); it don't waised time
 
-	  if (data_ready == 1)
+//	  if (data_ready == 1)
+//	  {
+//		  data_ready = 0; //(НАДО ЧЕКНУТЬ ЧТО ЕСЛИ ТУТ ПРЕРЫВАНИЯ ВОЗНИКНУТ)
+//		  //---ADC raw value transmission over UART---
+//		  	  //the values are formatted as long unsigned integer (%lu) and \r\n are used for carriage return (start at leftmost position) and new line.
+//		  sprintf(msg, "%lu,%lu\r\n",val_red, val_ir);
+//		  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), UART_TIMEOUT);
+//
+//	  }
+
+	  if (!isEmpty_IR())
 	  {
-		  data_ready = 0; //(НАДО ЧЕКНУТЬ ЧТО ЕСЛИ ТУТ ПРЕРЫВАНИЯ ВОЗНИКНУТ)
-		  //---ADC raw value transmission over UART---
-		  	  //the values are formatted as long unsigned integer (%lu) and \r\n are used for carriage return (start at leftmost position) and new line.
+		  uint32_t val_red = Dequeue_Red();
+		  uint32_t val_ir = Dequeue_IR();
 		  sprintf(msg, "%lu,%lu\r\n",val_red, val_ir);
 		  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), UART_TIMEOUT);
 
@@ -473,6 +540,7 @@ static void MX_GPIO_Init(void)
 void HAL_ADC_ConvCpltCallback (ADC_HandleTypeDef* hadc)
 {
 	uint32_t raw_val = HAL_ADC_GetValue(&hadc1);
+	uint32_t val = 0;
 	if (measurement_state == 3)
 	{
 		val_dark = raw_val;
@@ -481,15 +549,19 @@ void HAL_ADC_ConvCpltCallback (ADC_HandleTypeDef* hadc)
 	}
 	else if (measurement_state == 1)
 	{
-		val_red = (raw_val > val_dark) ? (raw_val - val_dark) : 0;
+		//val_red = (raw_val > val_dark) ? (raw_val - val_dark) : 0;
+		val = (raw_val > val_dark) ? (raw_val - val_dark) : 0;
+		Enqueue_Red(val);
 		measurement_state = 2;
 		Measure_interrupt();
 	}
 
 	else if (measurement_state == 2)
 	{
-		val_ir = (raw_val > val_dark) ? (raw_val - val_dark) : 0;
-		data_ready = 1;
+		//val_ir = (raw_val > val_dark) ? (raw_val - val_dark) : 0;
+		val = (raw_val > val_dark) ? (raw_val - val_dark) : 0;
+		Enqueue_IR(val);
+		//data_ready = 1;
 		measurement_state = 0;
 		Measure_interrupt();
 

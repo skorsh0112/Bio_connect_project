@@ -1,16 +1,18 @@
-2025-12-08 00:50:06,663 [INFO] WebApp:194 - Connection lost
-2025-12-08 00:50:09,114 [INFO] WebApp:191 - Connection restablished
-2025-12-08 12:26:05,586 [INFO] WebApp:194 - Connection lost
-2025-12-08 12:26:07,651 [INFO] WebApp:191 - Connection restablished
-2025-12-08 12:50:22,160 [INFO] WebApp:194 - Connection lost
-2025-12-08 13:22:38,564 [INFO] WebApp:191 - Connection restablished
-2025-12-08 14:16:16,893 [INFO] WebApp:194 - Connection lost
-2025-12-08 14:17:20,292 [INFO] WebApp:191 - Connection restablished
-2025-12-08 14:26:06,167 [INFO] MainUpdater:2872 - connection check result : 10
-2025-12-08 14:26:07,000 [INFO] CheckServerUpdateThread:120 - End of CheckServer Thread
-2025-12-08 18:35:36,564 [INFO] WebApp:194 - Connection lost
-2025-12-08 18:35:58,053 [INFO] WebApp:191 - Connection restablished
-2025-12-08 18:40:05,370 [INFO] WebApp:194 - Connection lost
-2025-12-08 19:07:50,305 [INFO] WebApp:191 - Connection restablished
-2025-12-08 22:33:48,987 [INFO] WebApp:194 - Connection lost
-2025-12-08 22:33:52,683 [INFO] WebApp:191 - Connection restablished
+2025-12-09 08:13:06,057 [INFO] WebApp:194 - Connection lost
+2025-12-09 08:35:55,193 [INFO] WebApp:191 - Connection restablished
+2025-12-09 10:03:36,372 [INFO] WebApp:194 - Connection lost
+2025-12-09 10:05:57,898 [INFO] WebApp:191 - Connection restablished
+2025-12-09 10:06:42,225 [INFO] WebApp:194 - Connection lost
+2025-12-09 10:26:18,490 [INFO] WebApp:191 - Connection restablished
+2025-12-09 10:58:52,658 [INFO] WebApp:194 - Connection lost
+2025-12-09 10:58:57,773 [INFO] WebApp:191 - Connection restablished
+2025-12-09 12:05:10,463 [INFO] WebApp:194 - Connection lost
+2025-12-09 12:05:14,744 [INFO] WebApp:191 - Connection restablished
+2025-12-09 12:36:15,396 [INFO] WebApp:194 - Connection lost
+2025-12-09 12:36:19,929 [INFO] WebApp:191 - Connection restablished
+2025-12-09 13:08:31,784 [INFO] WebApp:194 - Connection lost
+2025-12-09 13:08:36,213 [INFO] WebApp:191 - Connection restablished
+2025-12-09 13:40:35,010 [INFO] WebApp:194 - Connection lost
+2025-12-09 13:40:39,431 [INFO] WebApp:191 - Connection restablished
+2025-12-09 14:12:08,017 [INFO] WebApp:194 - Connection lost
+2025-12-09 14:12:12,027 [INFO] WebApp:191 - Connection restablished

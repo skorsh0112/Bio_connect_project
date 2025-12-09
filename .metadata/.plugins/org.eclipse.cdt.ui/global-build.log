@@ -1,16 +1,25 @@
-23:04:46 **** Incremental Build of configuration Debug for project bioConnect_STM32-MCU ****
-Info: Internal Builder is used for build
-arm-none-eabi-gcc ../Core/Src/main.c -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o Core/Src/main.o 
-../Core/Src/main.c: In function 'main':
-../Core/Src/main.c:95:12: warning: unused variable 'value_dac' [-Wunused-variable]
-   95 |   uint32_t value_dac=0;
-      |            ^~~~~~~~~
-arm-none-eabi-gcc -o bioConnect_STM32-MCU.elf Core/Src/main.o Core/Src/stm32l4xx_hal_msp.o Core/Src/stm32l4xx_it.o Core/Src/syscalls.o Core/Src/sysmem.o Core/Src/system_stm32l4xx.o Core/Startup/startup_stm32l476rgtx.o Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal.o Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_adc.o Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_adc_ex.o Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_cortex.o Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_dac.o Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_dac_ex.o Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_dma.o Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_dma_ex.o Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_exti.o Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash.o Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash_ex.o Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash_ramfunc.o Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_gpio.o Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_i2c.o Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_i2c_ex.o Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pwr.o Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pwr_ex.o Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rcc.o Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rcc_ex.o Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_tim.o Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_tim_ex.o Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart.o Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart_ex.o -mcpu=cortex-m4 -T/Users/skorsh/STM32CubeIDE/Project_bioConnect/bioConnect_STM32-MCU/STM32L476RGTX_FLASH.ld --specs=nosys.specs -Wl,-Map=bioConnect_STM32-MCU.map -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group 
-/Applications/STM32CubeIDE.app/Contents/Eclipse/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.macos64_1.0.0.202411102158/tools/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/ld: warning: bioConnect_STM32-MCU.elf has a LOAD segment with RWX permissions
-Info: Parallel threads used: 1
-23:05:03 **** Incremental Build of configuration Debug for project bioConnect_STM32-MCU ****
-Info: Internal Builder is used for build
-Info: Parallel threads used: 0
-23:05:27 **** Incremental Build of configuration Debug for project bioConnect_UNIX-Serial-2-CSV ****
+14:16:54 **** Incremental Build of configuration Debug for project bioConnect_UNIX-Serial-2-CSV ****
+make all 
+Building file: ../src/UNIX-Serial-2-CSV.c
+Invoking: GCC C Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/UNIX-Serial-2-CSV.d" -MT"src/UNIX-Serial-2-CSV.o" -o "src/UNIX-Serial-2-CSV.o" "../src/UNIX-Serial-2-CSV.c"
+../src/UNIX-Serial-2-CSV.c:96:11: warning: unused variable 'scaling_factor' [-Wunused-variable]
+   96 |     float scaling_factor = 10;
+      |           ^~~~~~~~~~~~~~
+../src/UNIX-Serial-2-CSV.c:97:11: warning: unused variable 'offset' [-Wunused-variable]
+   97 |     float offset = 1500;
+      |           ^~~~~~
+../src/UNIX-Serial-2-CSV.c:110:11: warning: unused variable 'proc_val' [-Wunused-variable]
+  110 |     float proc_val;            // Float value to write out
+      |           ^~~~~~~~
+3 warnings generated.
+Finished building: ../src/UNIX-Serial-2-CSV.c
+ 
+Building target: bioConnect_UNIX-Serial-2-CSV
+Invoking: GCC C Linker
+gcc  -o "bioConnect_UNIX-Serial-2-CSV"  ./src/UNIX-Serial-2-CSV.o   
+Finished building target: bioConnect_UNIX-Serial-2-CSV
+ 
+14:17:13 **** Incremental Build of configuration Debug for project bioConnect_UNIX-Serial-2-CSV ****
 make all 
 make: Nothing to be done for `all'.

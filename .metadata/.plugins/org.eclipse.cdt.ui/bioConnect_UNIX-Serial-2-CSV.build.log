@@ -1,6 +1,6 @@
-23:05:27 **** Incremental Build of configuration Debug for project bioConnect_UNIX-Serial-2-CSV ****
+14:17:13 **** Incremental Build of configuration Debug for project bioConnect_UNIX-Serial-2-CSV ****
 make all 
 make: Nothing to be done for `all'.
 
-23:05:27 Build Finished. 0 errors, 0 warnings. (took 273ms)
+14:17:14 Build Finished. 0 errors, 0 warnings. (took 335ms)
 
