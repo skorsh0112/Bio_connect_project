@@ -157,7 +157,7 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init(); //omplicated and we did it only once => let use HAL
+  HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -179,8 +179,6 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_DAC_Start(&hdac1,DAC_CHANNEL_2);
   HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
-
-  // Better to change then, since I use it inside while:
   HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), 0xFFFF); //print a hello world to begin the program
 
   //HAL_TIM_Base_Start_IT(&htim3); //transfer timer from Delay to interruption
@@ -230,10 +228,8 @@ int main(void)
 	  }
 
 	  if (HAL_GetTick() - last_update >= 10 && measurement_state == 0)
-	  //if (TIM6->SR & TIM_SR_UIF)
 	  {
 		  last_update = HAL_GetTick();
-		  //TIM6->SR = ~TIM_SR_UIF; //Clean Flag
 		  measurement_state = 3;
 		  Measure_interrupt();
 	  }
@@ -580,22 +576,18 @@ void Measure_interrupt(void)
 	}
 	else if (measurement_state == 1)
 	{
-		//HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, 1); //Turn ON RED
-		GPIOA->BSRR = GPIO_PIN_0;
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, 1); //Turn ON RED
 		HAL_ADC_Start_IT(&hadc1);
 	}
 	else if (measurement_state == 2)
 	{
-		//HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, 0); //Turn OFF RED
-		GPIOA->BRR = GPIO_PIN_0;
-		//HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, 1); //Turn ON IR
-		GPIOA->BSRR = GPIO_PIN_1;
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, 0); //Turn OFF RED
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, 1); //Turn ON IR
 		HAL_ADC_Start_IT(&hadc1);
 	}
 	else if (measurement_state == 0)
 	{
-		//HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|GPIO_PIN_1, 0); //Turn OFF both LED
-		GPIOA->BRR = (GPIO_PIN_1|GPIO_PIN_0);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|GPIO_PIN_1, 0); //Turn OFF both LED
 	}
 	}
 

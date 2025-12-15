@@ -230,10 +230,8 @@ int main(void)
 	  }
 
 	  if (HAL_GetTick() - last_update >= 10 && measurement_state == 0)
-	  //if (TIM6->SR & TIM_SR_UIF)
 	  {
 		  last_update = HAL_GetTick();
-		  //TIM6->SR = ~TIM_SR_UIF; //Clean Flag
 		  measurement_state = 3;
 		  Measure_interrupt();
 	  }
