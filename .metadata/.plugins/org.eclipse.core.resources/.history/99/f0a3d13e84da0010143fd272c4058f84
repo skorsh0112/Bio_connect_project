@@ -34,20 +34,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-// define constant
 #define ADC_TIMEOUT 1000
 #define UART_TIMEOUT 1000
-#define BUTTON_DELAY 200
-#define FINGER_THRESHOLD 2000
-#define FINGER_LOSS_MAX 10
-#define ACTIVE_TIMER 10
-#define PASSIVE_TIMER 1000
-
-// define state names
-#define STATE_READY 0
-#define STATE_PASSIVE 1
-#define STATE_ACTIVE 3
-
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -55,14 +43,13 @@
 //volatile - make this variables changable during interrupts
 
 //State description
-volatile uint32_t State = STATE_READY; //0 - Ready, wait for button, 3 - Measure
+volatile uint32_t State = 0; //0 - Ready, wait for button, 3 - Measure
 
 //Variables for button processing
 volatile uint32_t button_pressed = 0;
+volatile uint32_t button_delay = 200; // CHOOSE APPROPRIATE TIME??????
 volatile uint32_t button_last_push = 0;
 
-// Variables for finger loss
-static volatile uint8_t finger_loss_count = 0;
 
 //variable to know which LED should work 0 - Ready (No LED), 1 - Red, 2 - IR
 volatile uint8_t measurement_state = 0;
@@ -247,82 +234,34 @@ int main(void)
 	  if (button_pressed == 1)
 	  {
 		  button_pressed = 0;
-		  if (State == STATE_READY)
+		  if (State == 0)
 		  {
-			  State = STATE_PASSIVE;
-			  last_update = HAL_GetTick();
+			  State = 3; //CHANGE IT THEN!
 		  }
-		  else
+		  else if (State != 0)
 		  {
-			  State = STATE_READY;
-			  measurement_state = 0;
-			  //BETTER TO TURN OFF EVERYTHING
+			  State = 0;
 		  }
 	  }
 
-	  if (State == STATE_READY)
+	  if (State == 3)
 	  {
-		  //BETTER MAKE uC SLEEP
-	  }
-
-	  if (State == STATE_PASSIVE)
-	  {
-		  if (HAL_GetTick() - last_update >= PASSIVE_TIMER & measurement_state == 0)
-		  {
-			  last_update = HAL_GetTick();
-			  measurement_state = 3;
-			  Measure_interrupt();
-		  }
-
-		  if (!isEmpty_IR())
-		  {
-			  uint32_t val_red = Dequeue_Red();
-			  uint32_t val_ir = Dequeue_IR();
-
-			  if (val_red < FINGER_THRESHOLD)
-			  {
-				  //May be better to have gain_counter
-				  sprintf(msg, "%lu,%lu\r\n", val_red, val_ir);
-				  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), UART_TIMEOUT);
-
-				  State = STATE_ACTIVE;
-				  finger_loss_count = 0; //should be 0 anyway
-				  last_update = HAL_GetTick();
-			  }
-		  }
-	  }
-
-	  if (State == STATE_ACTIVE)
-	  {
-		  if (HAL_GetTick() - last_update >= 10 && measurement_state == 0)
-		  		  	  //if (TIM6->SR & TIM_SR_UIF)
-		  		  	  {
-		  		  		  last_update = HAL_GetTick();
-		  		  		  //TIM6->SR = ~TIM_SR_UIF; //Clean Flag
-		  		  		  measurement_state = 3;
-		  		  		  Measure_interrupt();
-		  		  	  }
-
-
 		  if (!isEmpty_IR())
 		  	  {
 		  		  uint32_t val_red = Dequeue_Red();
 		  		  uint32_t val_ir = Dequeue_IR();
+		  		  sprintf(msg, "%lu,%lu\r\n",val_red, val_ir);
+		  		  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), UART_TIMEOUT);
 
-		  		  if (val_red < FINGER_THRESHOLD)
-		  		  {
-					  sprintf(msg, "%lu,%lu\r\n",val_red, val_ir);
-					  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), UART_TIMEOUT);
-		  		  }
-		  		  else
-		  		  {
-		  			  finger_loss_count++;
-		  			  if (finger_loss_count >= FINGER_LOSS_MAX)
-		  			  {
-		  				  State = STATE_PASSIVE;
-		  				  finger_loss_count = 0;
-		  			  }
-		  		  }
+		  	  }
+
+		  	  if (HAL_GetTick() - last_update >= 10 && measurement_state == 0)
+		  	  //if (TIM6->SR & TIM_SR_UIF)
+		  	  {
+		  		  last_update = HAL_GetTick();
+		  		  //TIM6->SR = ~TIM_SR_UIF; //Clean Flag
+		  		  measurement_state = 3;
+		  		  Measure_interrupt();
 		  	  }
 	  }
 
@@ -710,7 +649,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	if (GPIO_Pin == GPIO_PIN_13)
 	{
 	uint32_t current_time = HAL_GetTick();
-		if (current_time - button_last_push > BUTTON_DELAY) //protection from button bounds
+		if (current_time - button_last_push > button_delay) //protection from button bounds
 		{
 			button_pressed = 1;
 			button_last_push = current_time;

@@ -180,7 +180,7 @@ int main(int argc, const char * argv[]) {
             }
         } else {
             if (n_bytes < 0) {
-                //perror("Error reading from the serial port");
+                perror("Error reading from the serial port");
                 continue;
             }
         }

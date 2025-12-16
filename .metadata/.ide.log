@@ -373,3 +373,9 @@ java.lang.NullPointerException: Cannot invoke "javax.swing.JTextField.getText()"
 2025-12-16 10:47:00,419 [INFO] ProjectBuilder:3463 - Time for Copy CMSIS : 0mS.
 2025-12-16 10:56:08,908 [INFO] WebApp:194 - Connection lost
 2025-12-16 10:56:11,686 [INFO] WebApp:191 - Connection restablished
+2025-12-16 13:03:55,229 [INFO] WebApp:194 - Connection lost
+2025-12-16 13:03:56,390 [INFO] WebApp:191 - Connection restablished
+2025-12-16 13:36:05,997 [INFO] WebApp:194 - Connection lost
+2025-12-16 13:36:08,761 [INFO] WebApp:191 - Connection restablished
+2025-12-16 14:41:01,701 [INFO] WebApp:194 - Connection lost
+2025-12-16 14:41:05,628 [INFO] WebApp:191 - Connection restablished
