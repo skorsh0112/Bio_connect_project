@@ -649,7 +649,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	if (GPIO_Pin == GPIO_PIN_13)
 	{
 	uint32_t current_time = HAL_GetTick();
-		if (current_time - button_last_push > button_delay) //protection from button bounds
+		if (current_time - button_last_push > button_dellay) //protection from button bounds
 		{
 			button_pressed = 1;
 			button_last_push = current_time;

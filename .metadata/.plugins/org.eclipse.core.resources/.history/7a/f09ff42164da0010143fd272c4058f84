@@ -41,16 +41,6 @@
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 //volatile - make this variables changable during interrupts
-
-//State description
-volatile uint32_t State = 0; //0 - Ready, wait for button, 3 - Measure
-
-//Variables for button processing
-volatile uint32_t button_pressed = 0;
-volatile uint32_t button_delay = 200; // CHOOSE APPROPRIATE TIME??????
-volatile uint32_t button_last_push = 0;
-
-
 //variable to know which LED should work 0 - Ready (No LED), 1 - Red, 2 - IR
 volatile uint8_t measurement_state = 0;
 
@@ -202,8 +192,8 @@ int main(void)
     HAL_NVIC_EnableIRQ(ADC1_2_IRQn);
 
 
-    //TIM6->CR1 |= TIM_CR1_CEN;
-    uint32_t last_update = 0;
+    TIM6->CR1 |= TIM_CR1_CEN;
+    //uint32_t last_update = 0;
     //HAL_TIM_Base_Start_IT(&htim6); // Enable TIM6 as in Ex5.2
   /* USER CODE END 2 */
 
@@ -231,40 +221,24 @@ int main(void)
 //		  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), UART_TIMEOUT);
 //
 //	  }
-	  if (button_pressed == 1)
+
+	  if (!isEmpty_IR())
 	  {
-		  button_pressed = 0;
-		  if (State == 0)
-		  {
-			  State = 3; //CHANGE IT THEN!
-		  }
-		  else if (State != 0)
-		  {
-			  State = 0;
-		  }
+		  uint32_t val_red = Dequeue_Red();
+		  uint32_t val_ir = Dequeue_IR();
+		  sprintf(msg, "%lu,%lu\r\n",val_red, val_ir);
+		  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), UART_TIMEOUT);
+
 	  }
 
-	  if (State == 3)
+	  //if (HAL_GetTick() - last_update >= 10 && measurement_state == 0)
+	  if (TIM6->SR & TIM_SR_UIF)
 	  {
-		  if (!isEmpty_IR())
-		  	  {
-		  		  uint32_t val_red = Dequeue_Red();
-		  		  uint32_t val_ir = Dequeue_IR();
-		  		  sprintf(msg, "%lu,%lu\r\n",val_red, val_ir);
-		  		  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), UART_TIMEOUT);
-
-		  	  }
-
-		  	  if (HAL_GetTick() - last_update >= 10 && measurement_state == 0)
-		  	  //if (TIM6->SR & TIM_SR_UIF)
-		  	  {
-		  		  last_update = HAL_GetTick();
-		  		  //TIM6->SR = ~TIM_SR_UIF; //Clean Flag
-		  		  measurement_state = 3;
-		  		  Measure_interrupt();
-		  	  }
+		  //last_update = HAL_GetTick();
+		  TIM6->SR = ~TIM_SR_UIF; //Clean Flag
+		  measurement_state = 3;
+		  Measure_interrupt();
 	  }
-
 	  //---DAC (for testing purpose only)---
 	  //The code below generates a sawtooth waveform and outputs in with the DAC on LD2 and Pin D13
 	  //If you want to read back the waveform with the ADC, connect Pin D13 (DAC OUT) to A5 (ADC IN) together on your Nucleo Board.
@@ -642,20 +616,6 @@ void Measure_interrupt(void)
 //		}
 //	}
 //}
-
-//Button
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-	if (GPIO_Pin == GPIO_PIN_13)
-	{
-	uint32_t current_time = HAL_GetTick();
-		if (current_time - button_last_push > button_delay) //protection from button bounds
-		{
-			button_pressed = 1;
-			button_last_push = current_time;
-		}
-	}
-}
 
 /* USER CODE END 4 */
 
