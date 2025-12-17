@@ -78,10 +78,10 @@ int main(int argc, const char* argv[]) {
     int bpm_buf_index = 0;
     int current_bpm = 0;
 
-    // <--- FIXED: Threshold lowered to catch peaks around 1.5 -->
-    float beat_thresh = 0.5;
+    // <--- FIXED: Threshold lowered to catch peaks around 1.5
+    float beat_thresh = 0.3;
 
-    // <--- ADDED: Variables for Moving Average Filtering -->
+    // <--- ADDED: Variables for Moving Average Filtering
     float ir_history[MA_SIZE] = {0};
     int ir_hist_idx = 0;
 
@@ -184,7 +184,7 @@ int main(int argc, const char* argv[]) {
                                 float R = (ac_red_amp / red.dc) / (ac_ir_amp / ir.dc);
 
                                 // Standard approximation: SpO2 = 110 - 25 * R
-                                float instant_spo2 = 110.0 - (25.0 * R);
+                                float instant_spo2 = 112.0 - (25.0 * R);
 
                                 // Constrain reasonable human limits
                                 if (instant_spo2 > 100) instant_spo2 = 100;
@@ -224,4 +224,3 @@ int main(int argc, const char* argv[]) {
     fclose(csvFile);
     return 0;
 }
-
