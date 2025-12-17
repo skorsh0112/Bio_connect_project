@@ -1,84 +1,109 @@
 # --------------------------------------------------------------
-# Python Script as part of the BioConnect Project Template 
-# 
-# This script reads PPG values from the file FILE_NAME and displays
-# the data in a live plot. 
+# Corrected Python Script for BioConnect Project
 # --------------------------------------------------------------
- 
 import csv
 import os
+import time
+import collections
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-import collections
 
+# --- Configuration ---
+FILE_NAME = '../Export/data.csv'
+BUFFER_SIZE = 1000      # How many points to show on screen
+UPDATE_INTERVAL_MS = 10 # How fast to refresh (lower = smoother)
 
-FILE_NAME = '../Export/data.csv' #'/Users/skorsh/STM32CubeIDE/Project_bioConnect/bioConnect_UNIX-Serial-2-CSV/src/data.csv' # in original file it was ../Export/data.csv 
-BUFFER_SIZE = 2**12  # Length of the buffer
-UPDATE_AFTER_MS = 10  # Updates plot after x miliseconds
+# --- Path Setup ---
+# This ensures Python finds the file relative to where the script is saved
+script_dir = os.path.dirname(os.path.abspath(__file__))
+filepath = os.path.join(script_dir, FILE_NAME)
 
-# Fixed size buffer with fast appends and pops on eighter end (FILO-Queue)
-y_data = collections.deque(maxlen=BUFFER_SIZE)
+# --- Data Buffer ---
+# A deque is a list that automatically pops old items when full
+y_data = collections.deque([0] * BUFFER_SIZE, maxlen=BUFFER_SIZE)
 
-# Initialize the plot
+# --- Plot Setup ---
 fig, ax = plt.subplots()
-line, = ax.plot([], [], c='k')  # Line to be updated
-ax.set_ylim(-100, 100)  # Adjust y-axis !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! in original -2300 to 4200
-a, b = 0, BUFFER_SIZE  # Set x-axis limits
+line, = ax.plot([], [], c='#d62728', linewidth=1.2) # Red line style
+ax.set_facecolor('#f0f0f0') # Light gray background
+ax.grid(True, which='both', linestyle='--', linewidth=0.5)
 
-# Opening the CSV file
-filepath = os.path.join(os.path.dirname(__file__), FILE_NAME)
-with open(filepath, 'r') as f:
-    # Getting the number of rows of the CSV file
-    row_count = sum(1 for row in csv.reader(f))
+# Labels
+ax.set_title("Live PPG Signal (Filtered)")
+ax.set_xlabel("Time (Samples)")
+ax.set_ylabel("Amplitude")
 
-# Open CSV file and fill buffer with last chunk of data
-file = open(filepath, 'r')
-reader = csv.reader(file)
-for i, row in enumerate(reader):
-    if i == (row_count-BUFFER_SIZE) and row:
-        y_data.append(float(row[0]))
-        break
+# --- Helper: File Reader Generator ---
+# This function handles the "tailing" logic (reading a file that is growing)
+def data_generator():
+    try:
+        with open(filepath, 'r') as f:
+            # Move to the end of the file immediately so we don't read old data
+            f.seek(0, os.SEEK_END)
+            
+            while True:
+                line_text = f.readline()
+                if line_text:
+                    try:
+                        # Parse the float from the C code output
+                        val = float(line_text.strip())
+                        yield val
+                    except ValueError:
+                        continue # Skip bad lines (if any)
+                else:
+                    # If no new line, yield None to say "waiting"
+                    yield None
+    except FileNotFoundError:
+        print(f"Waiting for file: {filepath}...")
+        yield None
 
-# Function to initialize the plot
-def init():
-    line.set_data([], [])
-    return line,
+# Initialize the data stream
+stream = data_generator()
 
-# Function to update the plot
+# --- Animation Update Function ---
 def update(frame):
-    global y_data, a, b # declare global variables
-    
-    # Read new lines from the CSV file
-    for i, row in enumerate(reader):
-        if row:
+    # 1. Read ALL new data available in the file buffer
+    points_added = 0
+    while True:
+        try:
+            val = next(stream)
+        except StopIteration:
+            break
+            
+        if val is None:
+            break # No more new data right now
+            
+        y_data.append(val)
+        points_added += 1
 
-            # Append new row of data to the buffer (pops the first element)
-            y_data.append(float(row[0])) 
-            
-            # Update x-axis limits
-            a += 1 
-            b += 1
-   
-            # Update the line plot
-            line.set_data(range(a, b), y_data)       
-            
-            # Adjust x-axis
-            ax.set_xlim(a, b)
-        else:
-            print('waiting')
+        # Limit: Don't read more than 500 points in one frame (prevents freezing)
+        if points_added > 500: 
+            break
+
+    # 2. Only redraw if we actually added new data
+    if points_added > 0:
+        # Update the line data
+        line.set_data(range(len(y_data)), y_data)
+        
+        # Adjust X-Axis
+        ax.set_xlim(0, len(y_data))
+        
+        # --- AUTO-SCALE Y-AXIS ---
+        # This is critical because we don't know the exact amplitude of your sensor
+        current_min = min(y_data)
+        current_max = max(y_data)
+        
+        # Add a little padding (margin) to the top and bottom
+        margin = (current_max - current_min) * 0.1
+        if margin == 0: margin = 1 # Prevent crash on flat line
+        
+        ax.set_ylim(current_min - margin, current_max + margin)
 
     return line,
 
-# Create animation function which countinously calls the update function 
-ani = FuncAnimation(fig, update, frames=None, init_func=init, blit=False, interval=UPDATE_AFTER_MS, save_count=BUFFER_SIZE)
+# --- Run the Animation ---
+print(f"Reading from: {filepath}")
+print("Plot window open...")
 
-# Close the CSV file when the window is closed
-def close_file(event):
-    print("Closing file...")
-    file.close()
-
-# Connect the close event to also close the file
-fig.canvas.mpl_connect('close_event', close_file)
-
-# Show the plot
+ani = FuncAnimation(fig, update, interval=UPDATE_INTERVAL_MS, blit=False, cache_frame_data=False)
 plt.show()
