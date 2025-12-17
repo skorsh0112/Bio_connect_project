@@ -1,12 +1,15 @@
 #MicroXplorer Configuration settings - do not modify
 ADC1.Channel-2\#ChannelRegularConversion=ADC_CHANNEL_1
-ADC1.ClockPrescaler=ADC_CLOCK_ASYNC_DIV256
+ADC1.ClockPrescaler=ADC_CLOCK_ASYNC_DIV16
 ADC1.CommonPathInternal=null|null|null|null
 ADC1.ContinuousConvMode=DISABLE
-ADC1.IPParameters=Rank-2\#ChannelRegularConversion,Channel-2\#ChannelRegularConversion,SamplingTime-2\#ChannelRegularConversion,OffsetNumber-2\#ChannelRegularConversion,NbrOfConversionFlag,ContinuousConvMode,ClockPrescaler,master,CommonPathInternal
+ADC1.IPParameters=Rank-2\#ChannelRegularConversion,Channel-2\#ChannelRegularConversion,SamplingTime-2\#ChannelRegularConversion,OffsetNumber-2\#ChannelRegularConversion,NbrOfConversionFlag,ContinuousConvMode,ClockPrescaler,master,OversamplingMode,Ratio,RightBitShift,CommonPathInternal
 ADC1.NbrOfConversionFlag=1
 ADC1.OffsetNumber-2\#ChannelRegularConversion=ADC_OFFSET_NONE
+ADC1.OversamplingMode=ENABLE
 ADC1.Rank-2\#ChannelRegularConversion=1
+ADC1.Ratio=ADC_OVERSAMPLING_RATIO_16
+ADC1.RightBitShift=ADC_RIGHTBITSHIFT_4
 ADC1.SamplingTime-2\#ChannelRegularConversion=ADC_SAMPLETIME_12CYCLES_5
 ADC1.master=1
 CAD.formats=

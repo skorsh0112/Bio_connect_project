@@ -256,14 +256,13 @@ int main(void)
 		  {
 			  State = STATE_READY;
 			  measurement_state = 0;
-			  GPIOA->BRR = (GPIO_PIN_1|GPIO_PIN_0);
+			  //BETTER TO TURN OFF EVERYTHING
 		  }
 	  }
 
 	  if (State == STATE_READY)
 	  {
-		  GPIOA->BRR = (GPIO_PIN_1|GPIO_PIN_0);
-		  HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
+		  //BETTER MAKE uC SLEEP
 	  }
 
 	  if (State == STATE_PASSIVE)

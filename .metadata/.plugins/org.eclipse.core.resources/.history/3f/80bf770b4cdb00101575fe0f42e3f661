@@ -89,7 +89,7 @@ int setup_serial_port(const char* port_name){
 int main(int argc, const char * argv[]) {
 
     // 1. SETUP
-    char port_name[] = "/dev/tty.usbmodem11303";  // ПРОВЕРЬТЕ ИМЯ ПОРТА!
+    char port_name[] = "/dev/tty.usbmodem103";  // ПРОВЕРЬТЕ ИМЯ ПОРТА!
     int serial_port = setup_serial_port(port_name);
     if (serial_port < 0) return 1;
 
