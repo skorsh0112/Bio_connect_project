@@ -10,7 +10,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdint.h>
 
 // Linux headers
 #include <fcntl.h> // Contains file controls like O_RDWR
@@ -112,7 +111,7 @@ int main(int argc, const char * argv[]) {
 
 	// 1. SETUP
 
-    char port_name[] = "/dev/tty.usbmodem103";  // Change this to your serial port !!!
+    char port_name[] = "/dev/ttyACM0";  // Change this to your serial port !!!
     int serial_port = setup_serial_port(port_name);
 
     // Open the CSV file for appending
@@ -288,7 +287,6 @@ int main(int argc, const char * argv[]) {
            }
 
            return 0;
-}
 
 
 

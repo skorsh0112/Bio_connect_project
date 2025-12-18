@@ -112,7 +112,7 @@ int main(int argc, const char * argv[]) {
 
 	// 1. SETUP
 
-    char port_name[] = "/dev/tty.usbmodem103";  // Change this to your serial port !!!
+    char port_name[] = "/dev/ttyACM0";  // Change this to your serial port !!!
     int serial_port = setup_serial_port(port_name);
 
     // Open the CSV file for appending

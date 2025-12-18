@@ -1,0 +1,615 @@
+/*
+ * Title: Serial Port to CSV (UNIX/Mac Version)
+ * Description: Reads "RED,IR" format, filters both, calculates BPM and SpO2.
+ */
+
+// C library headers
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <math.h>
+
+// Linux/UNIX headers
+#include <fcntl.h>      // Contains file controls like O_RDWR
+#include <errno.h>      // Error integer and strerror() function
+#include <termios.h>    // Contains POSIX terminal control definitions
+#include <unistd.h>     // write(), read(), close(), usleep()
+#include <sys/time.h>   // For gettimeofday()
+
+// Constants
+#define BUFFER_SIZE 1024
+#define CHUNK_SIZE 256
+#define AVG_WINDOW 4
+#define MA_SIZE 8
+
+// --- Signal Structure ---
+typedef struct {
+    float raw;
+    float dc;
+    float ac;
+    float filtered;
+    float min_val;
+    float max_val;
+} PPG_Channel;
+
+// --- Helper function to mimic Windows GetTickCount() ---
+unsigned long GetTickCount() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (unsigned long)((tv.tv_sec * 1000) + (tv.tv_usec / 1000));
+}
+
+int setup_serial_port(const char* port_name){
+    // Open the serial port
+    int serial_port = open(port_name, O_RDWR | O_NOCTTY | O_NDELAY);
+
+    if (serial_port < 0) {
+        printf("Error %i from open: %s\n", errno, strerror(errno));
+        return -1;
+    } else {
+        printf("Serial Port opened.\n");
+    }
+
+    struct termios tty;
+    if(tcgetattr(serial_port, &tty) != 0) {
+        printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
+        return -1;
+    }
+
+    tty.c_cflag &= ~PARENB;
+    tty.c_cflag &= ~CSTOPB;
+    tty.c_cflag &= ~CSIZE;
+    tty.c_cflag |= CS8;
+    tty.c_cflag &= ~CRTSCTS;
+    tty.c_cflag |= CREAD | CLOCAL;
+    tty.c_lflag &= ~ICANON;
+    tty.c_lflag &= ~ECHO;
+    tty.c_lflag &= ~ECHOE;
+    tty.c_lflag &= ~ECHONL;
+    tty.c_lflag &= ~ISIG;
+    tty.c_iflag &= ~(IXON | IXOFF | IXANY);
+    tty.c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL);
+    tty.c_oflag &= ~OPOST;
+    tty.c_oflag &= ~ONLCR;
+
+    tty.c_cc[VMIN] = 0;
+    tty.c_cc[VTIME] = 0;
+
+    cfsetispeed(&tty, B115200);
+    cfsetospeed(&tty, B115200);
+
+    if (tcsetattr(serial_port, TCSANOW, &tty) != 0) {
+        printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
+        return -1;
+    }
+    return serial_port;
+}
+
+
+int main(int argc, const char * argv[]) {
+
+    // 1. SETUP
+    char port_name[] = "/dev/tty.usbmodem11303";  // ПРОВЕРЬТЕ ИМЯ ПОРТА!
+    int serial_port = setup_serial_port(port_name);
+    if (serial_port < 0) return 1;
+
+    char export_file_name[] = "../Export/data.csv";
+    FILE *csvFile = fopen(export_file_name, "w");
+    if (csvFile == NULL) {
+        perror("Unable to open data.csv");
+        close(serial_port);
+        return 1;
+    }
+
+    // 2. SIGNAL VARIABLES
+    PPG_Channel red = {0};
+    PPG_Channel ir = {0};
+
+    // Filter Coefficients
+    float alpha_dc = 0.02;
+    float alpha_lp = 0.1;
+
+    // BPM Variables
+    unsigned long last_beat_time = 0;
+    int bpm_buffer[AVG_WINDOW] = {0};
+    int bpm_buf_index = 0;
+    int current_bpm = 0;
+
+    float beat_thresh = 0.5;
+
+    // Moving Average Variables
+    float ir_history[MA_SIZE] = {0};
+    int ir_hist_idx = 0;
+
+    // SpO2 Variables
+    float current_spo2 = 98.0;
+    int samples_since_beat = 0;
+
+    // Buffers
+    char buffer[BUFFER_SIZE];
+    int buffer_index = 0;
+    char chunk[CHUNK_SIZE];
+    ssize_t n_bytes;
+
+    printf("Listening for 'RED,IR'... [SpO2 & BPM Active]\n");
+
+    // 3. MAIN LOOP
+    while (1) {
+        n_bytes = read(serial_port, chunk, CHUNK_SIZE);
+
+        if (n_bytes > 0) {
+            for (int i = 0; i < n_bytes; ++i) {
+
+                // Если конец строки - обрабатываем данные
+                if (chunk[i] == '\n') {
+                    buffer[buffer_index] = '\0';
+
+                    // --- A. PARSING ---
+                    char* token = strtok(buffer, ",");
+                    if (token != NULL) {
+                        red.raw = (float)atof(token);
+                        token = strtok(NULL, ",");
+                        if (token != NULL) {
+                            ir.raw = (float)atof(token);
+                        }
+                    }
+
+                    // --- B. SIGNAL PROCESSING ---
+
+                    // 1. RED Channel
+                    if (red.dc == 0) red.dc = red.raw;
+                    red.dc = (alpha_dc * red.raw) + ((1.0 - alpha_dc) * red.dc);
+                    red.ac = red.raw - red.dc;
+                    red.filtered = (alpha_lp * (-red.ac)) + ((1.0 - alpha_lp) * red.filtered);
+
+                    // 2. IR Channel
+                    if (ir.dc == 0) ir.dc = ir.raw;
+                    ir.dc = (alpha_dc * ir.raw) + ((1.0 - alpha_dc) * ir.dc);
+                    ir.ac = ir.raw - ir.dc;
+
+                    float temp_filtered = (alpha_lp * (-ir.ac)) + ((1.0 - alpha_lp) * ir.filtered);
+
+                    // Moving Average
+                    ir_history[ir_hist_idx] = temp_filtered;
+                    ir_hist_idx = (ir_hist_idx + 1) % MA_SIZE;
+
+                    float sum = 0;
+                    for(int k=0; k<MA_SIZE; k++) {
+                        sum += ir_history[k];
+                    }
+                    ir.filtered = sum / MA_SIZE;
+
+                    // --- C. AMPLITUDE TRACKING ---
+                    if (red.ac > red.max_val) red.max_val = red.ac;
+                    if (red.ac < red.min_val) red.min_val = red.ac;
+
+                    if (ir.ac > ir.max_val) ir.max_val = ir.ac;
+                    if (ir.ac < ir.min_val) ir.min_val = ir.ac;
+
+                    // --- D. BEAT DETECTION ---
+                    unsigned long now = GetTickCount();
+                    samples_since_beat++;
+
+                    if (ir.filtered > beat_thresh && (now - last_beat_time > 300)) {
+                        unsigned long ibi = now - last_beat_time;
+                        last_beat_time = now;
+
+                        if (ibi > 0) {
+                            int instant_bpm = 60000 / ibi;
+
+                            bpm_buffer[bpm_buf_index] = instant_bpm;
+                            bpm_buf_index = (bpm_buf_index + 1) % AVG_WINDOW;
+                            int buffer_sum = 0, count = 0;
+                            for(int k=0; k<AVG_WINDOW; k++) {
+                                if(bpm_buffer[k] > 0) { buffer_sum += bpm_buffer[k]; count++; }
+                            }
+                            if(count > 0) current_bpm = buffer_sum / count;
+
+                            // SpO2 Calculation
+                            float ac_red_amp = red.max_val - red.min_val;
+                            float ac_ir_amp = ir.max_val - ir.min_val;
+
+                            if (ac_ir_amp > 0 && red.dc > 0 && ir.dc > 0) {
+                                float R = (ac_red_amp / red.dc) / (ac_ir_amp / ir.dc);
+                                float instant_spo2 = 110.0 - (25.0 * R);
+
+                                if (instant_spo2 > 100) instant_spo2 = 100;
+                                if (instant_spo2 < 80) instant_spo2 = 80;
+
+                                current_spo2 = (0.1 * instant_spo2) + (0.9 * current_spo2);
+                            }
+
+                            red.max_val = -1000; red.min_val = 1000;
+                            ir.max_val = -1000; ir.min_val = 1000;
+
+                            printf(">> BEAT! BPM: %d | SpO2: %.1f%%\n", current_bpm, current_spo2);
+                        }
+                    }
+
+                    // --- OUTPUT ---
+                    printf("IR: %.2f | Red: %.2f | BPM: %d | SpO2: %.1f\n",
+                           ir.filtered, red.filtered, current_bpm, current_spo2);
+
+                    fprintf(csvFile, "%f\n", ir.filtered);
+                    fflush(csvFile);
+
+                    buffer_index = 0;  // Сброс индекса после обработки строки
+
+                } else {
+                    // --- ВОТ ЭТОГО БЛОКА НЕ БЫЛО ---
+                    // Накапливаем данные в буфер, пока не встретим \n
+                    if (buffer_index < BUFFER_SIZE - 1) {
+                        buffer[buffer_index++] = chunk[i];
+                    } else {
+                        buffer_index = 0; // Переполнение, сбрасываем
+                    }
+                }
+            }
+        }
+
+        usleep(5000); // 5ms delay
+    }
+
+    if (close(serial_port) == 0 && fclose(csvFile) == 0) {
+        printf("Closed.\n");
+    }
+
+    return 0;
+}
+
+
+
+
+///*
+// *  Title: Serial Port to CSV
+// *  Description: This Programm will read out a serial port, filter the samples countinously and saves the output into a CSV-File.
+// *  Author: Frederic Waldmann
+// *  Date: 10.09.2024
+// *  Version: 1.0
+// */
+//
+//// C library headers
+//#include <stdio.h>
+//#include <string.h>
+//#include <stdlib.h>
+//#include <math.h>
+//
+//// Linux headers
+//#include <fcntl.h> // Contains file controls like O_RDWR
+//#include <errno.h> // Error integer and strerror() function
+//#include <termios.h> // Contains POSIX terminal control definitions
+//#include <unistd.h> // write(), read(), close()
+//#include <sys/time.h>
+//
+//// Constants
+//#define BUFFER_SIZE 1024          // Size of buffer for storing each complete value
+//#define CHUNK_SIZE 256            // Number of bytes to read in each call
+//#define AVG_WINDOW 4
+//#define MA_SIZE 8
+//
+//typedef struct {
+//    float raw;
+//    float dc;
+//    float ac;
+//    float filtered;
+//    float min_val;
+//    float max_val;
+//} PPG_Channel;
+//
+//unsigned long GetTickCount() {
+//    struct timeval tv;
+//    gettimeofday(&tv, NULL);
+//    return (unsigned long)((tv.tv_sec * 1000) + (tv.tv_usec / 1000));
+//}
+//
+//int setup_serial_port(const char* port_name){
+//
+//    // Open the serial port
+//    int serial_port = open(port_name, O_RDWR | O_NOCTTY | O_NDELAY);
+//
+//    // Check for errors
+//    if (serial_port < 0) {
+//        printf("Error %i from open: %s\n", errno, strerror(errno));
+//    } else {
+//        printf("Serial Port opened.\n");
+//    }
+//
+//    // Configure the serial port
+//    struct termios tty;
+//
+//    // Read in existing settings, and handle any error
+//    if(tcgetattr(serial_port, &tty) != 0) {
+//        printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
+//    }
+//
+//    // 8N1 (8 bits, no parity, 1 stop bit)
+//    tty.c_cflag &= ~PARENB;  // No parity
+//    tty.c_cflag &= ~CSTOPB;  // 1 stop bit
+//    tty.c_cflag &= ~CSIZE;   // Clear the current data size setting
+//    tty.c_cflag |= CS8;      // 8 data bits
+//
+//    tty.c_cflag &= ~CRTSCTS;  // Disable hardware flow control
+//    tty.c_cflag |= CREAD | CLOCAL;  // Turn on READ & ignore modem control lines
+//    tty.c_lflag &= ~ICANON;  // Disable canonical mode (raw input)
+//    tty.c_lflag &= ~ECHO; // Disable echo
+//    tty.c_lflag &= ~ECHOE; // Disable erasure
+//    tty.c_lflag &= ~ECHONL; // Disable new-line echo
+//    tty.c_lflag &= ~ISIG; // Disable interpretation of INTR, QUIT and SUSP
+//    tty.c_iflag &= ~(IXON | IXOFF | IXANY);  // Turn off software flow control
+//    tty.c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL); // Disable any special handling of received bytes
+//    tty.c_oflag &= ~OPOST; // Prevent special interpretation of output bytes (e.g. newline chars)
+//    tty.c_oflag &= ~ONLCR; // Prevent conversion of newline to carriage return/line feed
+//
+//    // Set the minimum number of characters to read and the read timeout
+//    tty.c_cc[VMIN] = 1;    // Wait for at least 1 character
+//    tty.c_cc[VTIME] = 0;   // No timeout (blocking read)
+//
+//    // Set the baud rates to 115200
+//    cfsetispeed(&tty, B115200);
+//    cfsetospeed(&tty, B115200);
+//
+//    // Save tty settings, also checking for error
+//    if (tcsetattr(serial_port, TCSANOW, &tty) != 0) {
+//        printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
+//    }
+//    return serial_port;
+//}
+//
+//
+//int main(int argc, const char * argv[]) {
+//
+//	// 1 STEP
+//
+//    char port_name[] = "/dev/tty.usbmodem103";  // Change this to your serial port !!!
+//    int serial_port = setup_serial_port(port_name);
+//
+//    // Open the CSV file for appending
+//    char export_file_name[] = "../Export/data.csv"; // "/data.csv"; //"../Export/data.csv"; // Export Filenames
+//    FILE *csvFile = fopen(export_file_name, "w");
+//    if (csvFile == NULL) {
+//        perror("Unable to open data.csv");
+//        close(serial_port);
+//        return 1;
+//    }
+//
+//
+//
+//    // 2. SIGNAL VARIABLES (Copy-pasted from Partner's code)
+//        PPG_Channel red = {0};
+//        PPG_Channel ir = {0};
+//
+//        // Filter Coefficients
+//        float alpha_dc = 0.02;
+//        float alpha_lp = 0.1;
+//
+//        // BPM Variables
+//        unsigned long last_beat_time = 0; // Заменили DWORD на unsigned long
+//        int bpm_buffer[AVG_WINDOW] = {0};
+//        int bpm_buf_index = 0;
+//        int current_bpm = 0;
+//
+//        float beat_thresh = 0.5;
+//
+//        // Moving Average Variables
+//        float ir_history[MA_SIZE] = {0};
+//        int ir_hist_idx = 0;
+//
+//        // SpO2 Variables
+//        float current_spo2 = 98.0;
+//        int samples_since_beat = 0;
+//        //  ----------------------- END DSP Initialization -------------------------
+//
+//        // Continuously read from the serial port
+//        char buffer[BUFFER_SIZE];
+//        int buffer_index = 0;
+//        char chunk[CHUNK_SIZE];
+//        ssize_t n_bytes;
+//
+//        printf("Listening for 'RED,IR'... [SpO2 & BPM Active]\n"); // Обновим сообщение
+//
+//
+//
+//    //  ----------------------- START DSP Initialization -----------------------
+//    //  In this section you can initialize varialbes for your algorithm/filter.
+//
+//    float scaling_factor = 10;
+//    float offset = 1500;
+//
+//
+//    //  ----------------------- END DSP Initialization -------------------------
+//
+//
+//    // Continuously read from the serial port
+//
+////    char buffer[BUFFER_SIZE];  // Buffer to store the received value
+////    int buffer_index = 0;      // Index to track position in buffer
+////    char chunk[CHUNK_SIZE];    // Temporary buffer to read multiple bytes
+////    int red_val;               // Integer value of RED value (first value)
+////    int ir_val;				   // Integer value of IR value (second value)
+////    float proc_val;            // Float value to write out
+////    ssize_t n_bytes;           // Number of bytes read
+//
+////    printf("Press CTRL+C to terminate...");
+//
+//    while (1) {
+//        // Read one byte
+//        n_bytes = read(serial_port, chunk, CHUNK_SIZE);
+//
+//        if (n_bytes > 0) {
+//
+//            // Process each byte in the chunk
+//            for (int i = 0; i < n_bytes; ++i) {
+////                if (chunk[i] == '\n') {
+////
+////                    // End of a value (newline detected)
+////                    buffer[buffer_index] = '\0';  // Null-terminate the string
+////
+////                    if (sscanf(buffer, "%d,%d", &red_val, &ir_val) == 2)
+////						{
+////							// Both values have been found!
+////
+////							printf("RED: %d, IR: %d\n", red_val, ir_val); // print both values
+////
+////							// Save in CSV (FOR NOW ONLY IR, THEN SCHOUL BOTH)
+////							fprintf(csvFile, "%d\n", ir_val);
+////							fflush(csvFile);
+////						}
+////						else
+////						{
+////							// If there wasn't two correct values
+////							printf("Parsing error: %s\n", buffer);
+////						}
+//
+//
+//
+//                    //raw_val = atof(buffer);       // Convert string to float
+//
+//                    //  ----------------------- START Processing -------------------------
+//                    /*
+//                       Here you can implement your own algorithms or digital filter on the sensor data.
+//					   The new measurement is provided in the variable raw_val (float). The processed value
+//					   must be stored to the variable proc_val (float), which then will be appended to the
+//					   CSV file.
+//					*/
+//
+//                    // Dummy code removing signal offset and scaling the signal by an arbitrary scale factor.
+////                    printf("Raw value: %d\n", raw_val);  // Print the value
+////                    proc_val = raw_val - offset;
+////                    proc_val *= scaling_factor;
+////					// Dumm code END
+////
+////                    printf("Processed value: %f\n", proc_val);  // Print the value
+////                    //  ----------------------- END Processing -------------------------
+////
+////                    // saves the processed value to the end of the csv file.
+////                    fprintf(csvFile, "%f\n", proc_val);
+////                    fflush(csvFile);
+//
+////                    buffer_index = 0;  // Reset buffer for the next value
+//
+////                } else {
+////                    // Accumulate characters until newline is detected
+////                    if (buffer_index < BUFFER_SIZE - 1) {
+////                        buffer[buffer_index++] = chunk[i];
+////
+////                        // Handle buffer overflow
+////                    } else {
+////                        fprintf(stderr, "Buffer overflow, discarding data\n");
+////                        buffer_index = 0;  // Reset buffer if overflow occurs
+////                    }
+////               }
+//            if (chunk[i] == '\n') {
+//                        	                    buffer[buffer_index] = '\0'; // Null-terminate
+//
+//                        	                    // --- A. PARSING (Logic from Partner) ---
+//                        	                    char* token = strtok(buffer, ",");
+//                        	                    if (token != NULL) {
+//                        	                        red.raw = (float)atof(token);
+//                        	                        token = strtok(NULL, ",");
+//                        	                        if (token != NULL) {
+//                        	                            ir.raw = (float)atof(token);
+//                        	                        }
+//                        	                    }
+//
+//                        	                    // --- B. SIGNAL PROCESSING (Dual Channel) ---
+//
+//                        	                    // 1. RED Channel Processing
+//                        	                    if (red.dc == 0) red.dc = red.raw;
+//                        	                    red.dc = (alpha_dc * red.raw) + ((1.0 - alpha_dc) * red.dc);
+//                        	                    red.ac = red.raw - red.dc;
+//                        	                    red.filtered = (alpha_lp * (-red.ac)) + ((1.0 - alpha_lp) * red.filtered);
+//
+//                        	                    // 2. IR Channel Processing
+//                        	                    if (ir.dc == 0) ir.dc = ir.raw;
+//                        	                    ir.dc = (alpha_dc * ir.raw) + ((1.0 - alpha_dc) * ir.dc);
+//                        	                    ir.ac = ir.raw - ir.dc;
+//
+//                        	                    float temp_filtered = (alpha_lp * (-ir.ac)) + ((1.0 - alpha_lp) * ir.filtered);
+//
+//                        	                    // Moving Average Step
+//                        	                    ir_history[ir_hist_idx] = temp_filtered;
+//                        	                    ir_hist_idx = (ir_hist_idx + 1) % MA_SIZE;
+//
+//                        	                    float sum = 0;
+//                        	                    for(int k=0; k<MA_SIZE; k++) {
+//                        	                        sum += ir_history[k];
+//                        	                    }
+//                        	                    ir.filtered = sum / MA_SIZE;
+//
+//                        	                    // --- C. AMPLITUDE TRACKING ---
+//                        	                    if (red.ac > red.max_val) red.max_val = red.ac;
+//                        	                    if (red.ac < red.min_val) red.min_val = red.ac;
+//
+//                        	                    if (ir.ac > ir.max_val) ir.max_val = ir.ac;
+//                        	                    if (ir.ac < ir.min_val) ir.min_val = ir.ac;
+//
+//                        	                    // --- D. BEAT DETECTION ---
+//                        	                    unsigned long now = GetTickCount(); // ИСПОЛЬЗУЕМ НАШУ ФУНКЦИЮ
+//                        	                    samples_since_beat++;
+//
+//                        	                    if (ir.filtered > beat_thresh && (now - last_beat_time > 300)) {
+//                        	                        unsigned long ibi = now - last_beat_time;
+//                        	                        last_beat_time = now;
+//
+//                        	                        if (ibi > 0) {
+//                        	                            int instant_bpm = 60000 / ibi;
+//
+//                        	                            bpm_buffer[bpm_buf_index] = instant_bpm;
+//                        	                            bpm_buf_index = (bpm_buf_index + 1) % AVG_WINDOW;
+//                        	                            int buffer_sum = 0, count = 0;
+//                        	                            for(int k=0; k<AVG_WINDOW; k++) {
+//                        	                                if(bpm_buffer[k] > 0) { buffer_sum += bpm_buffer[k]; count++; }
+//                        	                            }
+//                        	                            if(count > 0) current_bpm = buffer_sum / count;
+//
+//                        	                            // SpO2 Calculation
+//                        	                            float ac_red_amp = red.max_val - red.min_val;
+//                        	                            float ac_ir_amp = ir.max_val - ir.min_val;
+//
+//                        	                            if (ac_ir_amp > 0 && red.dc > 0 && ir.dc > 0) {
+//                        	                                float R = (ac_red_amp / red.dc) / (ac_ir_amp / ir.dc);
+//                        	                                float instant_spo2 = 110.0 - (25.0 * R);
+//
+//                        	                                if (instant_spo2 > 100) instant_spo2 = 100;
+//                        	                                if (instant_spo2 < 80) instant_spo2 = 80;
+//
+//                        	                                current_spo2 = (0.1 * instant_spo2) + (0.9 * current_spo2);
+//                        	                            }
+//
+//                        	                            red.max_val = -1000; red.min_val = 1000;
+//                        	                            ir.max_val = -1000; ir.min_val = 1000;
+//
+//                        	                            // Console output for Beat
+//                        	                            printf(">> BEAT! BPM: %d | SpO2: %.1f%%\n", current_bpm, current_spo2);
+//                        	                        }
+//                        	                    }
+//
+//                        	                    // --- OUTPUT ---
+//                        	                    // Сохраняем логику вывода напарника
+//                        	                    printf("IR: %.2f | Red: %.2f | BPM: %d | SpO2: %.1f\n",
+//                        	                           ir.filtered, red.filtered, current_bpm, current_spo2);
+//
+//                        	                    fprintf(csvFile, "%f\n", ir.filtered);
+//                        	                    fflush(csvFile);
+//
+//                        	                    buffer_index = 0;  // Reset buffer
+//                        	                }
+//
+//            }
+//        } else {
+//            if (n_bytes < 0) {
+//                //perror("Error reading from the serial port");
+//                continue;
+//            }
+//        }
+//        // Pause Loop to receive data
+//        usleep(10000);
+//    }
+//
+//    // when while loop get terminated properly close port and file
+//    if (close(serial_port) == 0 && fclose(csvFile) == 0) {
+//        printf("Serial Port and CSV file closed.\n");
+//    }
+//
+//    return 0;
+//}
